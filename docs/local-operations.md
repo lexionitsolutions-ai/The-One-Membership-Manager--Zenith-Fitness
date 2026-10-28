@@ -40,3 +40,10 @@ action when automatic fingerprint syncing is disabled.
 This is intended for the gym's local server and LAN. Public-IP requests do not
 receive direct operational access. Cross-site mutations are rejected by the same
 origin checks, and cross-site operational reads are rejected too.
+
+## Vercel mode
+
+The cloud app uses protected encrypted Supabase session storage instead of local
+files. Login-free operations require the private staff link cookie, not private
+IP detection. The gym PC continues to handle device and Sheets jobs through the
+cloud bridge queue. See vercel-deployment.md.

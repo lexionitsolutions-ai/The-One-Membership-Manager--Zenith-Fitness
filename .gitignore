@@ -25,3 +25,5 @@ __pycache__/
 attendance-portal-zenith/
 attendance portal/
 !.env.example
+
+.vercel/

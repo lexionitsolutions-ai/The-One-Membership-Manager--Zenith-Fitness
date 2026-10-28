@@ -16,12 +16,15 @@ const {endDate:packageEndDate}=require('../package-dates');
 const {ageOn:memberAgeOn}=require('../member-dates');
 const {createAttendanceImporter}=require('./attendanceImport');
 const {parameterFilter}=require('./memberParameters');
+const {createCloudBridge}=require('./cloudBridge');
+const {accessToken,grantFormsAccess}=require('./formsAccess');
 
 function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessionStore=new Map(),operationStore=new Map(),attendanceOptions={} } = {}) {
   const router = express.Router();
   const sessions = sessionStore;
   const attempts = new Map();
   const attendanceImporter=createAttendanceImporter({fetchImpl,...attendanceOptions});
+  const cloudBridge=createCloudBridge({fetchImpl});
   const COOKIE = 'zenith_staff_session';
   const sessionLife = 400 * 24 * 60 * 60 * 1000;
   const housekeeping = setInterval(() => {
@@ -77,19 +80,24 @@ function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessio
   }
   async function authenticated(req) {
     const id = sessionId(req);
-    const session = sessions.get(id);
+    let session = await sessions.get(id);
     if (!session) {
-      sessions.delete(id);
+      await sessions.delete(id);
       throw Object.assign(new Error('Please sign in to continue.'), { status: 401 });
     }
     if (session.expiresAt < Date.now() + 60000) {
+      if(sessions.refresh){
+        try{session=await sessions.refresh(id,async current=>{const data=await request('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:current.refreshToken}});return {...current,accessToken:data.access_token,refreshToken:data.refresh_token,expiresAt:Date.now()+data.expires_in*1000};});}
+        catch(error){if(error.status===401)await sessions.delete(id);throw error;}
+      }else{
       session.refreshing ||= request('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: session.refreshToken } }).then(data => {
         session.accessToken = data.access_token;
         session.refreshToken = data.refresh_token;
         session.expiresAt = Date.now() + data.expires_in * 1000;
-        const {refreshing,...saved}=session;sessions.set(id,saved);
+        const {refreshing,...saved}=session;return sessions.set(id,saved);
       }).finally(() => { session.refreshing = null; });
-      try { await session.refreshing; } catch (error) { if(error.status===401)sessions.delete(id);throw error; }
+      try { await session.refreshing; } catch (error) { if(error.status===401)await sessions.delete(id);throw error; }
+      }
     }
     // RLS is applied with the user's token, and current staff assignment is rechecked.
     const staff = await staffFor(session.accessToken, session.userId);
@@ -129,10 +137,11 @@ function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessio
       const data = await request('/auth/v1/token?grant_type=password', { method: 'POST', body: { email, password } });
       const staff = await staffFor(data.access_token, data.user.id);
       const id = crypto.randomBytes(32).toString('hex');
-      sessions.delete(sessionId(req));
-      sessions.set(id, { accessToken: data.access_token, refreshToken: data.refresh_token, userId: data.user.id, expiresAt: now + data.expires_in * 1000 });
+      await sessions.delete(sessionId(req));
+      await sessions.set(id, { accessToken: data.access_token, refreshToken: data.refresh_token, userId: data.user.id, expiresAt: now + data.expires_in * 1000 });
       attempts.delete(req.ip);
       setCookie(req, res, id, sessionLife);
+      if(process.env.VERCEL&&staff.gym_id===process.env.OPEN_OPERATIONS_GYM_ID&&['admin','receptionist'].includes(staff.role))grantFormsAccess(req,res);
       res.json({ staff });
     } catch (error) { next(error); }
   });
@@ -142,18 +151,22 @@ function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessio
     reportRange(req.query.from,req.query.to,new Date(),days);
     res.json(demoDashboard(role, days,new Date(),{from:req.query.from,to:req.query.to}));
   });
-  router.post('/logout', async (req, res) => {
+  router.post('/logout', async (req, res,next) => {try{
     const id = sessionId(req);
-    const session = sessions.get(id);
-    sessions.delete(id);
+    const session = await sessions.get(id);
+    await sessions.delete(id);
     setCookie(req, res, '', 0);
+    if(process.env.VERCEL)res.clearCookie('zenith_forms_access',{path:'/'});
     if (session) await request('/auth/v1/logout?scope=local', { method: 'POST', token: session.accessToken }).catch(() => {});
     res.json({ success: true });
+    }catch(e){next(e);}
   });
   router.get('/session', async (req, res, next) => {
     try { const { staff } = await authenticated(req);setCookie(req,res,sessionId(req),sessionLife);res.json({ staff }); } catch (error) { next(error); }
   });
   router.get('/operations-session',async(req,res,next)=>{try{await openOperation(req);res.json({openAccess:true});}catch(e){next(e);}});
+  router.get('/forms-link',async(req,res,next)=>{try{const {staff}=await authenticated(req);requireRole(staff,['admin']);if(staff.gym_id!==process.env.OPEN_OPERATIONS_GYM_ID)throw Object.assign(new Error('This gym does not own the private forms link.'),{status:403});res.json({url:`${req.protocol}://${req.get('host')}/staff-access/${accessToken()}`});}catch(e){next(e);}});
+  router.get('/bridge-jobs/:id',async(req,res,next)=>{try{const {staff}=await operational(req);requireRole(staff,['admin','receptionist']);const job=await cloudBridge.job(staff.gym_id,req.params.id);if(staff.role==='receptionist'&&job.kind!=='attendance_refresh')throw Object.assign(new Error('This job requires administrator access.'),{status:403});res.json(job);}catch(e){next(e);}});
   function sourceDashboard(staff, days, ready=false, range={}) {
     const file=path.join(__dirname,'..','migration-data','real-data','snapshot.json');
     if(!fs.existsSync(file)) throw Object.assign(new Error('The real-data snapshot has not been prepared.'),{status:503});
@@ -248,24 +261,26 @@ function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessio
       const mapped=snapshot.members.filter(m=>m.device_user_id!==null);
       let accessDate;
       if(req.query.date){try{accessDate=validateAccessDate(req.query.date);}catch(e){throw Object.assign(e,{status:400});}}
-      res.json({spreadsheetId:process.env.FALLBACK_SPREADSHEET_ID||'',deviceEnabled:process.env.SUPABASE_DEVICE_SYNC_ENABLED==='1',accessDate:accessDate||null,serviceAccount,rows:Object.fromEntries(Object.entries(projection).map(([name,rows])=>[name,rows.length-1])),lastAdmissionID:projection['System Control'][1][1],devices:deviceTargets(snapshot,mapped.map(m=>m.id),accessDate),note:'Preview only. No workbook or fingerprint device was changed.'});
+      res.json({spreadsheetId:process.env.FALLBACK_SPREADSHEET_ID||'',deviceEnabled:process.env.SUPABASE_DEVICE_SYNC_ENABLED==='1',accessDate:accessDate||null,serviceAccount,bridge:process.env.VERCEL?await cloudBridge.status(staff.gym_id):null,rows:Object.fromEntries(Object.entries(projection).map(([name,rows])=>[name,rows.length-1])),lastAdmissionID:projection['System Control'][1][1],devices:deviceTargets(snapshot,mapped.map(m=>m.id),accessDate),note:'Preview only. No workbook or fingerprint device was changed.'});
     }catch(e){if(e.schemaMissing)e.message='Run migration 008 to enable fallback and fingerprint syncing.';next(e);}
   });
   router.post('/fingerprint-date-sync',async(req,res,next)=>{
     try{const {staff,session}=await deviceOperational(req);requireRole(staff,['admin']);
       let date;try{date=validateAccessDate(req.body.date);}catch(e){throw Object.assign(e,{status:400});}
+      if(process.env.VERCEL)return res.status(202).json(await cloudBridge.enqueue(staff.gym_id,staff.user_id,'fingerprint_date_sync',{date}));
       const result=await bridge.run({gymId:staff.gym_id,token:session.accessToken,destination:'fingerprint',force:true,manualDate:date});
       if(result.success&&!result.busy){try{result.attendanceRefresh=await attendanceImporter.run(staff.gym_id,staff.user_id);}catch(e){result.attendanceRefresh={success:false,error:e.message};}}
       res.json(result);
     }catch(e){if(e.schemaMissing)e.message='Run migration 008 before syncing.';if(!e.status)e.status=503;next(e);}
   });
   router.post('/attendance/refresh',async(req,res,next)=>{
-    try{const {staff}=await authenticated(req);requireRole(staff,['admin','receptionist']);res.json(await attendanceImporter.run(staff.gym_id,staff.user_id));}
+    try{const {staff}=await authenticated(req);requireRole(staff,['admin','receptionist']);if(process.env.VERCEL)return res.status(202).json(await cloudBridge.enqueue(staff.gym_id,staff.user_id,'attendance_refresh',{}));res.json(await attendanceImporter.run(staff.gym_id,staff.user_id));}
     catch(e){if(!e.status)e.status=503;next(e);}
   });
   router.post('/secondary-sync',async(req,res,next)=>{
     try{const {staff,session}=await authenticated(req);requireRole(staff,['admin']);const destination=req.body.destination;
       if(!['google_sheets','fingerprint'].includes(destination))throw Object.assign(new Error('Choose a valid sync destination.'),{status:400});
+      if(process.env.VERCEL)return res.status(202).json(await cloudBridge.enqueue(staff.gym_id,staff.user_id,'secondary_sync',{destination}));
       const result=await bridge.run({gymId:staff.gym_id,token:session.accessToken,destination,force:true});
       if(destination==='fingerprint'&&result.success&&!result.busy){try{result.attendanceRefresh=await attendanceImporter.run(staff.gym_id,staff.user_id);}catch(e){result.attendanceRefresh={success:false,error:e.message};}}
       res.json(result);
@@ -273,7 +288,7 @@ function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessio
   });
   // Delivery uses a staff session or the dedicated local operations identity.
   let autoSyncRunning=false;
-  const secondaryTimer=setInterval(async()=>{
+  const secondaryTimer=!process.env.VERCEL&&setInterval(async()=>{
     if(autoSyncRunning||(!process.env.FALLBACK_SPREADSHEET_ID&&process.env.SUPABASE_DEVICE_SYNC_ENABLED!=='1'))return;
     autoSyncRunning=true;
     try{for(const id of [...sessions.keys(),...(process.env.OPEN_OPERATIONS_ENABLED==='1'?[null]:[])]){let auth;
@@ -286,7 +301,8 @@ function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessio
       }
       break;
     }}finally{autoSyncRunning=false;}
-  },15000);secondaryTimer.unref();
+  },15000);if(secondaryTimer)secondaryTimer.unref();
+  if(!process.env.VERCEL&&process.env.OPEN_OPERATIONS_ENABLED==='1')cloudBridge.startWorker({getContext:()=>openOperation({headers:{},socket:{remoteAddress:'127.0.0.1'}}),bridge,attendanceImporter});
   router.post('/import-snapshot',async(req,res,next)=>{
     try{const {staff,session}=await authenticated(req);requireRole(staff,['admin']);
       const payload=JSON.parse(fs.readFileSync(path.join(__dirname,'..','migration-data','real-data','snapshot.json'),'utf8'));

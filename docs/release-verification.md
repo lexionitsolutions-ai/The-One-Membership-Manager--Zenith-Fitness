@@ -35,3 +35,13 @@
 - Live QA did not create real admissions, renewals, payments or PT contracts;
   these mutations were validated with isolated test fixtures/mocked services.
 - This is not yet a production Vercel deployment; see vercel-readiness.md.
+
+## Cloud deployment extension
+
+- 66 Node tests pass, including five cloud runtime/access/queue tests.
+- Migration 016 was applied by the owner; encrypted storage and refresh leases
+  were also verified live with temporary records that were removed afterward.
+- HTTPS login, the authenticated dashboard, private forms, dashboard separation
+  and a hosted attendance request through the local gym bridge all passed.
+- The deployed architecture is documented in vercel-deployment.md. The earlier
+  local-only hosting limitation above records the previous source release.

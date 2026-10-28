@@ -9,6 +9,13 @@ async function syncPreview(button,accessDate){
 }
 document.addEventListener('click',async event=>{
   const button=event.target.closest('button');if(!button)return;
+  if(button.hasAttribute('data-private-forms-link')){
+    if(state.preview){toast('Sign in as administrator to get the private staff link.');return;}
+    button.disabled=true;
+    try{const result=await api('forms-link');$('#entryTitle').textContent='Private staff access';$('#saveEntry').hidden=true;$('#entryFields').innerHTML='<p class="form-hint wide">Open this link once on each staff device. It unlocks operational forms and fingerprint sync without an individual form login. Keep the link within your staff team.</p><label class="form-field wide">Private link<input id="privateFormsLink" type="text" readonly value="'+escapeHtml(result.url)+'"></label><button class="button" type="button" data-copy-forms-link>Copy link</button>';$('#entryDialog').showModal();}
+    catch(e){toast(e.message);}finally{button.disabled=false;}return;
+  }
+  if(button.hasAttribute('data-copy-forms-link')){try{await navigator.clipboard.writeText($('#privateFormsLink').value);toast('Private staff link copied.');}catch{toast('Select and copy the link from the field.');}return;}
   if(button.hasAttribute('data-sync-preview'))return syncPreview(button);
   if(button.dataset.accessDay){const today=state.data.today;const day=button.dataset.accessDay==='tomorrow'?new Date(new Date(today+'T12:00:00Z').getTime()+86400000).toISOString().slice(0,10):today;state.deviceSyncDate=day;$('#accessSyncDate').value=day;return;}
   if(button.hasAttribute('data-date-preview'))return syncPreview(button,$('#accessSyncDate').value);

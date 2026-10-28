@@ -59,13 +59,16 @@ See [release verification](docs/release-verification.md),
 [local sessions and operations](docs/local-operations.md),
 [attendance](docs/attendance.md), and [WhatsApp templates](docs/whatsapp-messages.md).
 
-## Hosting status
+## Vercel hosting
 
-This source release runs as a **local Node server**. It is not yet a Vercel
-serverless deployment. The current encrypted session files and background worker
-require persistent local storage and a running process. The gym's private-IP
-fingerprint device must remain behind a local bridge. Do not deploy the root
-HTML files alone: their `/api/portal` routes need the backend.
+The app supports Vercel through `api/index.js` and `vercel.json`. The cloud
+workspace uses encrypted Supabase session storage. Operational forms can be
+opened through an administrator-issued private staff link without an individual
+form login. Dashboard reports still require a staff account.
 
-[Vercel readiness](docs/vercel-readiness.md) lists the remaining hosting work.
-No production cloud deployment is performed by this release.
+Device and fallback work stays on the gym computer: keep the local Node app
+running. The hosted app queues work through Supabase and polls for confirmed
+completion; it never connects directly to a private LAN device address.
+
+See [Vercel deployment](docs/vercel-deployment.md) for environment setup,
+Supabase migration 016, private-link access and the local bridge.

@@ -15,18 +15,23 @@ Production workspace: https://the-one-membership-manager-zenith-f.vercel.app
   publish it: it encrypts cloud sessions and signs private forms access links.
 - Credentials belong in Vercel environment settings, never in Git or browser code.
 
-## Staff sign-in and private forms
+## Staff sign-in and form access
 
 Dashboard staff use their existing Supabase credentials and roles. Cloud login
 sessions persist in encrypted Supabase records across function instances and
 redeployments. Refresh is serialized with a database lease. Logout deletes the
 session record, revokes its Supabase session and clears the browser cookies.
 
+New Admission, Renewal, Enquiry and Personal Training are public forms: no
+individual login or private staff link is required to fill and submit them.
+Their operational APIs are narrowly scoped; public PT lookup does not expose
+membership balances, and public callers cannot edit member profiles, collect
+existing dues, export reports or access dashboard data.
+
 Administrators can open **Activity & sync ? Private staff link for forms** and
 copy the link to trusted staff devices. Opening it once grants an HttpOnly forms
-access cookie. It unlocks operational forms and device sync without granting a
-dashboard session or report access. A public visitor without that link gets no
-forms access. The link is a shared staff credential; keep it private. Rotating
+access cookie. It unlocks Member Update and device sync without granting a
+dashboard session or report access. The four public forms do not need this link. The link is a shared staff credential; keep it private. Rotating
 PORTAL_SESSION_SECRET invalidates links and requires clearing/recreating the
 old cloud session records under the former encryption key.
 

@@ -17,12 +17,13 @@ const {ageOn:memberAgeOn}=require('../member-dates');
 const {createAttendanceImporter}=require('./attendanceImport');
 const {parameterFilter}=require('./memberParameters');
 const {createCloudBridge}=require('./cloudBridge');
-const {accessToken,grantFormsAccess}=require('./formsAccess');
+const {accessToken,grantFormsAccess,hasFormsAccess}=require('./formsAccess');
 
 function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessionStore=new Map(),operationStore=new Map(),attendanceOptions={} } = {}) {
   const router = express.Router();
   const sessions = sessionStore;
   const attempts = new Map();
+  const publicAttempts=new Map();
   const attendanceImporter=createAttendanceImporter({fetchImpl,...attendanceOptions});
   const cloudBridge=createCloudBridge({fetchImpl});
   const COOKIE = 'zenith_staff_session';
@@ -30,6 +31,7 @@ function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessio
   const housekeeping = setInterval(() => {
     const now = Date.now();
     for (const [key, value] of attempts) if (value.until < now) attempts.delete(key);
+    for (const [key, value] of publicAttempts) if (value.until < now) publicAttempts.delete(key);
   }, 60000);
   housekeeping.unref();
 
@@ -105,9 +107,13 @@ function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessio
     return { session, staff };
   }
   const openOperation=createOpenOperations({store:operationStore,request,fetchImpl,staffFor});
-  async function operational(req){
+  async function operational(req,options={}){
     if(sessionId(req)){try{const auth=await authenticated(req);if(['admin','receptionist'].includes(auth.staff.role)||process.env.OPEN_OPERATIONS_ENABLED!=='1')return auth;}catch(e){if(e.status!==401)throw e;}}
-    return openOperation(req);
+    if(options.publicForm&&process.env.VERCEL&&!hasFormsAccess(req)){
+      const now=Date.now(),previous=publicAttempts.get(req.ip),limit=previous&&previous.until>now?previous:{count:0,until:now+5*60000};
+      if(++limit.count>120)throw Object.assign(new Error('Too many form requests. Please try again in a few minutes.'),{status:429});publicAttempts.set(req.ip,limit);
+    }
+    return openOperation(req,options);
   }
   async function deviceOperational(req){
     if(process.env.OPEN_OPERATIONS_ENABLED==='1')return openOperation(req);
@@ -230,7 +236,7 @@ function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessio
     catch(error){if(!error.schemaMissing)throw error;return {templates:messages.specs.map(s=>({...s,updated_at:null})),setupRequired:true};}
   }
   router.get('/whatsapp-templates',async(req,res,next)=>{
-    try{const {staff,session}=await operational(req);requireRole(staff,['admin','receptionist']);res.json(await messageTemplates(staff,session.accessToken));}catch(e){next(e);}
+    try{const {staff,session,publicAccess}=await operational(req,{publicForm:true});requireRole(staff,['admin','receptionist']);const settings=await messageTemplates(staff,session.accessToken);if(publicAccess)settings.templates=settings.templates.filter(t=>['admission','renewed','enquiry','pt'].includes(t.template_key));res.json(settings);}catch(e){next(e);}
   });
   router.post('/member-reviews',async(req,res,next)=>{
     try{const {staff,session}=await authenticated(req);requireRole(staff,['admin','receptionist']);const {requestId,...payload}=req.body;
@@ -312,8 +318,8 @@ function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessio
     }catch(e){if(e.schemaMissing)e.message='Run the management setup SQL before importing.';next(e);}
   });
   function uuid(value){if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value)))throw Object.assign(new Error('Invalid record identifier.'),{status:400});return value;}
-  router.get('/member-lookup',async(req,res,next)=>{
-    try{const {staff,session}=await operational(req);requireRole(staff,['admin','receptionist']);
+  router.get(['/member-lookup','/pt-member-lookup'],async(req,res,next)=>{
+    try{const {staff,session}=await operational(req,{publicForm:true});requireRole(staff,['admin','receptionist']);
       const id=String(req.query.admissionId||'').trim().toUpperCase();const mobile=String(req.query.mobile||'').replace(/\D/g,'');
       if(!id&&!mobile)throw Object.assign(new Error('Enter an admission ID or mobile number.'),{status:400});
       if(id&&!/^[A-Z]+-\d+$/.test(id))throw Object.assign(new Error('Invalid admission ID.'),{status:400});
@@ -322,6 +328,7 @@ function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessio
       if(members.length>1)throw Object.assign(new Error('More than one member uses that phone. Search by admission ID.'),{status:409});
       if(!members.length)return res.json({success:false,message:'No member found in Supabase. Import existing members first, or check the admission ID.'});
       const member=members[0];
+      if(req.path==='/pt-member-lookup')return res.json({member});
       const periods=await request(`/rest/v1/memberships?select=end_date,plan_id&gym_id=eq.${staff.gym_id}&member_id=eq.${member.id}&status=eq.confirmed&order=end_date.desc&limit=1`,{token:session.accessToken});
       const latest=periods[0];let plan='No membership';
       if(latest){const plans=await request(`/rest/v1/membership_plans?select=name&id=eq.${latest.plan_id}&gym_id=eq.${staff.gym_id}`,{token:session.accessToken});plan=plans[0]?.name||'Customize Package';}
@@ -343,18 +350,18 @@ function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessio
     }catch(e){next(e);}
   });
   router.get('/pt-trainers',async(req,res,next)=>{
-    try{const {staff,session}=await operational(req);requireRole(staff,['admin','receptionist']);res.json(await rows('pt_trainers',`select=id,name&gym_id=eq.${staff.gym_id}&is_active=eq.true&order=name.asc`,session.accessToken));}
+    try{const {staff,session}=await operational(req,{publicForm:true});requireRole(staff,['admin','receptionist']);res.json(await rows('pt_trainers',`select=id,name&gym_id=eq.${staff.gym_id}&is_active=eq.true&order=name.asc`,session.accessToken));}
     catch(e){if(e.schemaMissing)e.message='Run migration 006 before using Personal Training.';next(e);}
   });
   router.post('/member-command',async(req,res,next)=>{
-    try{const {staff,session}=await operational(req);requireRole(staff,['admin','receptionist']);
+    try{const {staff,session}=await operational(req,{publicForm:req.body?.command==='pt'});requireRole(staff,['admin','receptionist']);
       const {command,payload,requestId}=req.body;
       if(!['profile','membership','payment','pt','pt_payment'].includes(command)||!payload||typeof payload!=='object'||Array.isArray(payload))throw Object.assign(new Error('Invalid member form.'),{status:400});
       const result=await request('/rest/v1/rpc/manage_member_form',{method:'POST',token:session.accessToken,body:{target_gym:staff.gym_id,request_uuid:uuid(requestId),command,payload}});res.json(result);
     }catch(e){if(e.schemaMissing){e.status=503;e.message='Run migration 006 (member updates and Personal Training) before saving.';}next(e);}
   });
   router.post('/form-submit',async(req,res,next)=>{
-    try{const {staff,session}=await operational(req);requireRole(staff,['admin','receptionist']);const b=req.body;
+    try{const {staff,session}=await operational(req,{publicForm:true});requireRole(staff,['admin','receptionist']);const b=req.body;
       if(b.action==='enquire'){
         const payload={full_name:String(b.name||'').trim(),phone:String(b.contact||b.mobile||'').replace(/\D/g,''),email:String(b.email||'').trim(),address:String(b.address||'').trim(),interested_plan:String(b.interestedIn||''),source:String(b.source||''),follow_up_date:b.followUpDate||null,notes:String(b.message||'')};
         if(!payload.full_name||!/^\d{10,15}$/.test(payload.phone)||(payload.follow_up_date&&!validDate(payload.follow_up_date)))throw Object.assign(new Error('Enter a name, valid phone and valid optional follow-up date.'),{status:400});

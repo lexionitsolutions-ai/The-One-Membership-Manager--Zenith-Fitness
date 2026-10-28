@@ -62,9 +62,9 @@ See [release verification](docs/release-verification.md),
 ## Vercel hosting
 
 The app supports Vercel through `api/index.js` and `vercel.json`. The cloud
-workspace uses encrypted Supabase session storage. Operational forms can be
-opened through an administrator-issued private staff link without an individual
-form login. Dashboard reports still require a staff account.
+workspace uses encrypted Supabase session storage. Admission, Renewal, Enquiry and PT forms work without login. Member Update and
+fingerprint sync retain private staff access. Dashboard reports require a staff
+account, and sessions persist until explicit logout.
 
 Device and fallback work stays on the gym computer: keep the local Node app
 running. The hosted app queues work through Supabase and polls for confirmed

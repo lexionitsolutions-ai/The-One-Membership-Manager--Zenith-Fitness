@@ -12,7 +12,7 @@ document.addEventListener('click',async event=>{
   if(button.hasAttribute('data-private-forms-link')){
     if(state.preview){toast('Sign in as administrator to get the private staff link.');return;}
     button.disabled=true;
-    try{const result=await api('forms-link');$('#entryTitle').textContent='Private staff access';$('#saveEntry').hidden=true;$('#entryFields').innerHTML='<p class="form-hint wide">Open this link once on each staff device. It unlocks operational forms and fingerprint sync without an individual form login. Keep the link within your staff team.</p><label class="form-field wide">Private link<input id="privateFormsLink" type="text" readonly value="'+escapeHtml(result.url)+'"></label><button class="button" type="button" data-copy-forms-link>Copy link</button>';$('#entryDialog').showModal();}
+    try{const result=await api('forms-link');$('#entryTitle').textContent='Private staff access';$('#saveEntry').hidden=true;$('#entryFields').innerHTML='<p class="form-hint wide">Open this link once on each staff device. It unlocks Member Update and fingerprint sync without an individual form login. Admission, Renewal, Enquiry and PT are already public. Keep the link within your staff team.</p><label class="form-field wide">Private link<input id="privateFormsLink" type="text" readonly value="'+escapeHtml(result.url)+'"></label><button class="button" type="button" data-copy-forms-link>Copy link</button>';$('#entryDialog').showModal();}
     catch(e){toast(e.message);}finally{button.disabled=false;}return;
   }
   if(button.hasAttribute('data-copy-forms-link')){try{await navigator.clipboard.writeText($('#privateFormsLink').value);toast('Private staff link copied.');}catch{toast('Select and copy the link from the field.');}return;}

@@ -16,6 +16,9 @@ window.zenithCommand=async function(command,payload){
 window.zenithFind=async function(value){
   const input=value.trim();return zenithRequest('member-details?'+(/^[A-Z]+-\d+$/i.test(input)?'admissionId='+encodeURIComponent(input):'mobile='+encodeURIComponent(input)));
 };
+window.zenithFindPT=async function(value){
+ const input=value.trim();return zenithRequest('pt-member-lookup?'+(/^[A-Z]+-\d+$/i.test(input)?'admissionId='+encodeURIComponent(input):'mobile='+encodeURIComponent(input)));
+};
 window.zenithMonthEnd=function(start,months){const d=new Date(start+'T12:00:00Z'),day=d.getUTCDate();d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()+Number(months));const last=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)).getUTCDate();d.setUTCDate(Math.min(day,last));return d.toISOString().slice(0,10);};
 document.addEventListener('DOMContentLoaded',()=>{
   for(const command of ['profile','membership','payment','pt','pt_payment']){

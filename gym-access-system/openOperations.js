@@ -50,11 +50,11 @@ function createOpenOperations({store,request,fetchImpl,staffFor}){
   if(staff.gym_id!==gymId||staff.role!=='admin')throw Object.assign(new Error('The local operations account is disabled or has a different gym role.'),{status:403});
   return {staff,session:{accessToken:machine.accessToken},openAccess:true};
  }
- return async req=>{
-  const allowed=process.env.VERCEL?hasFormsAccess(req):privateNetwork(req);
+ return async (req,{publicForm=false}={})=>{
+  const allowed=publicForm||(process.env.VERCEL?hasFormsAccess(req):privateNetwork(req));
   if(process.env.OPEN_OPERATIONS_ENABLED!=='1'||!allowed)throw Object.assign(new Error(process.env.VERCEL?'Open the private staff link provided by your administrator, or sign in to the dashboard.':'Please sign in to continue.'),{status:401});
   if(req.headers['sec-fetch-site']==='cross-site')throw Object.assign(new Error('Open the forms directly from the gym app.'),{status:403});
-  pending ||= acquire().finally(()=>{pending=null;});return pending;
+  pending ||= acquire().finally(()=>{pending=null;});const auth=await pending;return {...auth,publicAccess:Boolean(publicForm&&process.env.VERCEL&&!hasFormsAccess(req))};
  };
 }
 module.exports={createOpenOperations,privateNetwork};

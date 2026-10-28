@@ -15,7 +15,11 @@ app.use(express.urlencoded({extended:false}));
 const privateDirectory=path.join(__dirname,'..','runtime-private');
 app.use('/api/portal',createDashboardRouter({sessionStore:process.env.VERCEL?new CloudRuntimeStore('sessions'):new PersistentSessions(privateDirectory),operationStore:process.env.VERCEL?new CloudRuntimeStore('operations'):new PersistentSessions(privateDirectory,'operations')}));
 app.get('/staff-access/:token',(req,res)=>{if(!validToken(req.params.token))return res.status(403).send('This private staff link is invalid. Ask your administrator for the current link.');grantFormsAccess(req,res);res.set('Cache-Control','no-store');res.set('Referrer-Policy','no-referrer');res.redirect('/forms/index.html');});
-if(process.env.VERCEL)app.use(['/forms','/fingerprint'],(req,res,next)=>{if(hasFormsAccess(req))return next();res.status(403).type('html').send('<!doctype html><html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Zenith staff access</title><body style="font:18px/1.6 Arial;padding:40px;max-width:620px;margin:auto;color:#253149"><h1>Private staff access</h1><p>Open the private staff link provided by your administrator, or sign in to the staff dashboard to use the forms.</p><a href="/dashboard/">Staff sign-in</a></body></html>');});
+if(process.env.VERCEL)app.use(['/forms','/fingerprint'],(req,res,next)=>{
+ const publicPage=req.baseUrl==='/forms'&&(['/index.html','/renewal.html','/enquire.html','/pt.html'].includes(req.path)||!req.path.toLowerCase().endsWith('.html'));
+ if(publicPage||hasFormsAccess(req))return next();
+ res.status(403).type('html').send('<!doctype html><html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Zenith staff access</title><body style="font:18px/1.6 Arial;padding:40px;max-width:620px;margin:auto;color:#253149"><h1>Private staff access</h1><p>Open the private staff link provided by your administrator, or sign in to the staff dashboard to use this staff-only page.</p><a href="/dashboard/">Staff sign-in</a></body></html>');
+});
 app.use('/fingerprint',express.static(path.join(__dirname,'public','fingerprint')));
 app.use('/dashboard',express.static(path.join(__dirname,'public','dashboard')));
 app.use('/forms/assets',express.static(path.join(__dirname,'..','assets')));

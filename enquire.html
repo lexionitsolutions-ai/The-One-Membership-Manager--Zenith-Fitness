@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zenith Fitness | Enquiry</title>
+  <link rel="stylesheet" href="forms-modern.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a class="nav-brand" href="index.html" aria-label="Zenith Fitness home">
+      <img src="assets/zenith-logo.png" alt="Zenith Fitness logo">
+      <span>Zenith Fitness</span>
+    </a>
+    <label class="form-navigation">Page<select id="formNavigation" aria-label="Go to page"><option value="/dashboard/">Dashboard</option><option value="index.html">New Admission</option><option value="renewal.html">Renewal</option><option value="update.html">Member Update</option><option value="pt.html">Personal Training</option><option value="enquire.html" selected>Enquire</option><option value="/fingerprint/">Fingerprint Sync</option></select></label>
+  </nav>
+
+  <header class="form-intro"><div><h1>New enquiry</h1><p>Record contact details, requirements and the next follow-up.</p></div></header>
+
+  <form id="enquiryForm">
+
+    <div class="section">
+      <h2>Contact Details</h2>
+      <div class="row">
+        <input type="text" id="enqName" placeholder="Name" required>
+        <input type="tel" id="enqContact" placeholder="Contact No" required>
+      </div>
+      <div class="row">
+        <div class="form-field address-control"><label for="enqAddress">Address</label><select id="enqAddress"><option value="">Select locality (optional)</option><option>Hanuman Nagar</option><option>Pachgaon</option><option>Jarag Nagar</option><option>Kalamba</option><option>Hockey Stadium</option><option>Sambhaji Nagar</option><option>Nale Colony</option><option>Shivaji Peth</option><option>Phulewadi</option><option value="__other__">Other - Please Specify</option></select><label for="enqAddressOther" class="other-address-label" hidden>Please specify address</label><input type="text" id="enqAddressOther" placeholder="Type the address" hidden disabled></div>
+        <input type="email" id="enqEmail" placeholder="Email (optional)">
+        <select id="enqInterestedIn">
+          <option value="">Interested In (optional)</option>
+          <option value="Gym">Gym</option>
+          <option value="Zumba">Zumba</option>
+          <option value="Personal Training">Personal Training</option>
+          <option value="Happy Hours">Happy Hours</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Enquiry</h2>
+      <div class="row">
+        <select id="enqSource">
+          <option value="">How did you hear about us? (optional)</option>
+          <option value="Walk-in">Walk-in</option>
+          <option value="Referral">Referral</option>
+          <option value="Instagram">Instagram</option>
+          <option value="Google">Google</option>
+          <option value="Other">Other</option>
+        </select>
+        <input type="date" id="enqFollowUpDate" placeholder="Follow-up date (optional)">
+      </div>
+      <div class="row">
+        <textarea id="enqMessage" placeholder="Message / Requirements (optional)"></textarea>
+      </div>
+    </div>
+
+    <button type="submit" id="submitEnquiryBtn">Submit Enquiry</button>
+  </form>
+</div>
+
+<script src="/dashboard/whatsapp-templates.js"></script>
+<script src="dashboard-form-sync.js"></script>
+<script src="enquire.js"></script>
+<script src="forms-ui.js"></script>
+</body>
+</html>

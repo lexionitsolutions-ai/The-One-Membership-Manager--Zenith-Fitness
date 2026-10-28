@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zenith Fitness | Admission Form</title>
+  <link rel="stylesheet" href="forms-modern.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a class="nav-brand" href="index.html" aria-label="Zenith Fitness home">
+      <img src="assets/zenith-logo.png" alt="Zenith Fitness logo">
+      <span>Zenith Fitness</span>
+    </a>
+    <label class="form-navigation">Page<select id="formNavigation" aria-label="Go to page"><option value="/dashboard/">Dashboard</option><option value="index.html" selected>New Admission</option><option value="renewal.html">Renewal</option><option value="update.html">Member Update</option><option value="pt.html">Personal Training</option><option value="enquire.html">Enquire</option><option value="/fingerprint/">Fingerprint Sync</option></select></label>
+  </nav>
+
+  <header class="form-intro"><div><h1>New admission</h1><p>Enter member details, choose a package and record payment.</p></div></header>
+
+  <form id="admissionForm">
+
+    <!-- PERSONAL DETAILS -->
+    <div class="section">
+  <h2>Personal Details</h2>
+
+  <div class="row">
+    <input type="text" id="name" placeholder="Full Name" required>
+    <input type="tel" id="mobile" placeholder="Mobile Number" required>
+  </div>
+
+  <div class="row">
+    <select id="gender" required>
+      <option value="">Select Gender</option>
+      <option>Male</option>
+      <option>Female</option>
+
+    </select>
+
+
+  </div>
+
+  <div class="row birth-age-row">
+    <input type="text" id="birthDate" placeholder="DD/MM/YYYY" inputmode="numeric" maxlength="10" autocomplete="bday" aria-describedby="birthDateHint">
+    <input type="number" id="age" placeholder="Age" min="0" max="130">
+  </div>
+  <p id="birthDateHint" class="field-help">Type your birth date as DD/MM/YYYY. Age is calculated automatically.</p>
+  <div class="row address-row">
+    <div class="form-field address-control"><label for="address">Address</label><select id="address"><option value="">Select locality (optional)</option><option>Hanuman Nagar</option><option>Pachgaon</option><option>Jarag Nagar</option><option>Kalamba</option><option>Hockey Stadium</option><option>Sambhaji Nagar</option><option>Nale Colony</option><option>Shivaji Peth</option><option>Phulewadi</option><option value="__other__">Other - Please Specify</option></select></div>
+    <div class="form-field other-address-field" id="addressOtherField" hidden><label for="addressOther">Please specify address</label><input type="text" id="addressOther" placeholder="Type the address" hidden disabled></div>
+  </div>
+
+  <div class="row">
+    <textarea id="injuries" placeholder="Any prior injuries / medical history"></textarea>
+  </div>
+</div>
+
+
+    <!-- MEMBERSHIP DETAILS -->
+    <div class="section">
+      <h2>Membership Details</h2>
+
+      <div class="row">
+        <select id="plan" required onchange="calculateEndDate()">
+          <option value="">Select Plan</option>
+          <option value="30">1 Month</option>
+          <option value="90">3 Months</option>
+          <option value="180">6 Months</option>
+          <option value="365">12 Months</option>
+          <option value="custom">Customize Package</option>
+        </select>
+
+        <select id="category" required>
+          <option value="">Membership Type</option>
+          <option>Regular</option>
+          <option>Happy Hours</option>
+          <option>Personal Training</option>
+        </select>
+      </div>
+
+      <div class="form-field custom-package-days" id="customDaysField" hidden>
+        <label for="customDays">Number of days *</label>
+        <input type="number" id="customDays" min="1" step="1" placeholder="Enter package duration in days" disabled>
+        <small>End date updates automatically from the start date.</small>
+      </div>
+
+      <div class="row">
+        <input type="date" id="startDate" required onchange="calculateEndDate()">
+        <input type="date" id="endDate" required>
+      </div>
+
+    </div>
+
+    <!-- PAYMENT DETAILS -->
+    <div class="section">
+      <h2>Payment Details</h2>
+
+      <div class="row">
+        <input type="number" id="amountPaid" placeholder="Amount Paid" required>
+        <input type="number" id="pendingAmount" placeholder="Pending Amount" required>
+      </div>
+
+      <div class="row">
+        <select id="paymentMode">
+          <option value="">Payment Mode</option>
+          <option>Cash</option>
+          <option>UPI</option>
+          <option>Card</option>
+                  <option>Cash + Online</option>
+</select>
+      </div>
+      <fieldset id="splitPaymentFields" class="split-payment" hidden disabled>
+        <legend>Payment breakdown</legend>
+        <div class="row">
+          <input id="cashCollected" type="number" min="0.01" step="0.01" placeholder="Cash collected" required>
+          <input id="onlineCollected" type="number" min="0.01" step="0.01" placeholder="Online collected" required>
+        </div>
+        <p class="form-hint">Amount received is calculated from cash + online. Enter any remaining balance in Pending amount.</p>
+      </fieldset>
+    </div>
+
+    <!-- REMARKS -->
+    <div class="section">
+      <h2>Remarks</h2>
+      <textarea id="remarks" placeholder="Any notes..."></textarea>
+    </div>
+
+    <button type="submit" id="submitAdmissionBtn">Submit Admission</button>
+
+  </form>
+</div>
+
+<script src="/dashboard/whatsapp-templates.js"></script>
+<script src="dashboard-form-sync.js"></script>
+<script src="split-payment.js"></script>
+<script src="package-dates.js"></script>
+<script src="member-dates.js"></script>
+<script src="script.js"></script>
+<script src="forms-ui.js"></script>
+</body>
+</html>

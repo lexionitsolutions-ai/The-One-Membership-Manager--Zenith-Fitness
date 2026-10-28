@@ -1,0 +1,27 @@
+node_modules/
+logs/
+*.log
+
+.env
+.env.*
+
+backup-before-*/
+.github-latest/
+
+# Private migration exports and member data
+migration-data/
+runtime-private/
+backups/
+.agents/
+.release-stage/
+.release-source/
+**/credentials.json
+**/*service-account*.json
+*.pem
+*.key
+__pycache__/
+*.pyc
+# Separate legacy attendance project; not part of this app release.
+attendance-portal-zenith/
+attendance portal/
+!.env.example

@@ -1,0 +1,32 @@
+{
+  "name": "finger-int-admission",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node gym-access-system/server.js",
+    "start:access": "node gym-access-system/server.js",
+    "start:manual": "set MANUAL_SYNC_ONLY=1&& node gym-access-system/server.js",
+    "start:attendance": "node gym-access-system/attendanceSync.js",
+    "check:supabase": "node --env-file=.env scripts/check-supabase.js",
+    "start:dashboard": "set PORT=3001&& set MANUAL_SYNC_ONLY=1&& node gym-access-system/server.js",
+    "test:dashboard": "node --test gym-access-system/dashboard.test.js",
+    "test:secondary": "node --test gym-access-system/secondary.test.js",
+    "test:messages": "node --test gym-access-system/messages.test.js",
+    "test:reviews": "node --test gym-access-system/memberReview.test.js",
+    "test:reception": "node --test gym-access-system/reception.test.js",
+    "test:staff": "node --test gym-access-system/staffAccounts.test.js",
+    "test": "node --test gym-access-system/*.test.js",
+    "test:imports": "python -m unittest discover -s scripts -p test_*.py"
+  },
+  "dependencies": {
+    "axios": "^1.14.0",
+    "express": "^5.2.1",
+    "googleapis": "^171.4.0",
+    "node-cron": "^4.2.1",
+    "zklib-js": "^1.3.5",
+    "zkteco-js": "^1.7.1"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

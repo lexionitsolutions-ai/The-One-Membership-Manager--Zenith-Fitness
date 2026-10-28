@@ -1,0 +1,14 @@
+.env
+.env.*
+**/credentials.json
+**/*service-account*.json
+runtime-private/
+migration-data/
+logs/
+backups/
+node_modules/
+.agents/
+.release-stage/
+.release-source/
+attendance-portal-zenith/
+attendance portal/

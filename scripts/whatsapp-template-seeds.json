@@ -1,0 +1,134 @@
+[
+  {
+    "template_key": "admission",
+    "title": "Admission confirmation",
+    "body": "Welcome to Zenith Fitness {{member_name}} 💪\n\nYour admission has been successfully completed.\n\n🆔 Admission ID: {{admission_id}}\n-> Plan: {{plan}}\n-> Start Date: {{start_date}}\n-> End Date: {{end_date}}\n\nWe’re excited to be a part of your fitness journey 🔥\n\n-> Gym Timings:\nMon–Sat: 6:00 AM – 11:00 PM\nSunday: 6:30 AM – 10:00 AM (MORNING) || 5:00 PM – 9:00 PM (EVENING)\n\n📲 Important:\nSave this number *9272112745* in your contacts to receive important updates, workout tips, and announcements.\n\n📸 Instagram:\nhttps://www.instagram.com/zenithfitness360\n\nLet’s build your best version together",
+    "variables": [
+      "member_name",
+      "admission_id",
+      "phone",
+      "gym_name",
+      "gym_phone",
+      "plan",
+      "start_date",
+      "end_date",
+      "amount_paid",
+      "pending_amount"
+    ]
+  },
+  {
+    "template_key": "renewal_reminder",
+    "title": "Renewal reminder",
+    "body": "Hello {{member_name}},\n\nThis is a gentle reminder that your membership at Zenith Fitness will expire on {{end_date}}.\n\nWe look forward to continuing your fitness journey with us 💪\n\nYou may renew conveniently via UPI / GPay on 📱 9272112745.\n\nStay consistent. Stay strong. 🔥",
+    "variables": [
+      "member_name",
+      "admission_id",
+      "phone",
+      "gym_name",
+      "gym_phone",
+      "plan",
+      "start_date",
+      "end_date",
+      "amount_paid",
+      "pending_amount"
+    ]
+  },
+  {
+    "template_key": "renewed",
+    "title": "Renewed membership confirmation",
+    "body": "Hello {{member_name}},\n\nYour membership at Zenith Fitness has been successfully renewed.\n\nAdmission ID: {{admission_id}}\n\nPlan: {{plan}}\n\nStart Date: {{start_date}}\n\nEnd Date: {{end_date}}\n\nThank you for continuing your fitness journey with us. 💪\n\nWe truly appreciate your trust and support.\n\n⭐ If you are genuinely happy with our services, we would be grateful if you could leave us a Google Review.\n\nYour review helps us grow, reach more people, and build a stronger and healthier fitness community.\n\nGoogle Review Link:\n\nhttps://g.page/r/CTR-7sBIfPWYEBM/review\n\nThank you for being a valued member of Zenith Fitness.\n\nStay Fit. Stay Strong. 🔥\n\nTeam Zenith Fitness",
+    "variables": [
+      "member_name",
+      "admission_id",
+      "phone",
+      "gym_name",
+      "gym_phone",
+      "plan",
+      "start_date",
+      "end_date",
+      "amount_paid",
+      "pending_amount"
+    ]
+  },
+  {
+    "template_key": "pt",
+    "title": "Personal training confirmation",
+    "body": "Hello {{member_name}},\n\nYour personal training package is confirmed.\nAdmission ID: {{admission_id}}\nPackage: {{plan}}\nTrainer: {{trainer_name}}\nStart date: {{start_date}}\nEnd date: {{end_date}}\nAmount paid: {{amount_paid}}\nPending amount: {{pending_amount}}\n\nTeam Zenith Fitness",
+    "variables": [
+      "member_name",
+      "admission_id",
+      "phone",
+      "gym_name",
+      "gym_phone",
+      "plan",
+      "start_date",
+      "end_date",
+      "amount_paid",
+      "pending_amount",
+      "trainer_name"
+    ]
+  },
+  {
+    "template_key": "enquiry",
+    "title": "Enquiry response",
+    "body": "Thank You for enquiring at Zenith Fitness :)\n\nWe’re located behind ITI College, Hanuman Nagar, Pachgaon Road, Kolhapur.\n\nHere is what we offer:\n\nHere is what we offer:\n\n-> Strength Training\n-> Cardio\n-> Group Batches: Functional | Zumba | Yoga\n-> FREE 45 Days BMI Checkup\n-> FREE Diet Plan on 3 Months & Above Membership\n-> FREE Steam Sessions Every Month\n\nGym Timings:\n-> Mon–Sat: 6:00 AM – 11:00 PM (FULL DAY)\n-> Sunday: 6:30 AM – 10:00 AM (MORNING)\n           5:00 PM – 9:00 PM (EVENING)\n\n-> FREE one-day trial available!\n\n------------------------------\nZenith Fitness Membership Packages\n------------------------------\n\nMale Membership Charges:\n-> 1 Month – Rs. 2000\n-> 3 Months – Rs. 4699\n-> 6 Months – Rs. 6499\n-> 1 Year – Rs. 9991\n\nFemale Membership Charges:\n-> 1 Month – Rs. 1499\n-> 3 Months – Rs. 3999\n-> 6 Months – Rs. 5699\n-> 1 Year – Rs. 8999\n\nHappy Hours (10 AM TO 4 PM [Only for Females]):\n-> 1 Month – Rs. 1000\n-> 3 Months – Rs. 3000\n-> 6 Months – Rs. 4500\n-> 1 Year – Rs. 6000\n\nMemberships include access to Strength Training, Cardio Zone, Functional Training, Group Batches, and Premium Gym Equipment.\n\nFor enquiries or to start your fitness journey:\n-> 9272112745\n\nInstagram:\n-> https://www.instagram.com/zenithfitness360",
+    "variables": [
+      "member_name",
+      "phone",
+      "gym_name",
+      "gym_phone",
+      "address",
+      "plan",
+      "follow_up_date"
+    ]
+  },
+  {
+    "template_key": "followup",
+    "title": "Lead follow-up",
+    "body": "Hello {{member_name}},\n\nWe're eagerly waiting to welcome you to Zenith Fitness.\n\nEvery transformation begins with a single decision. We're here to guide you every step of the way. Let's begin your fitness journey together.\n\nZenith Fitness, Hanuman Nagar, Pachgaon Road, Kolhapur\n9272112745\n\nBest regards,\nTeam Zenith",
+    "variables": [
+      "member_name",
+      "phone",
+      "gym_name",
+      "gym_phone",
+      "address",
+      "plan",
+      "follow_up_date"
+    ]
+  },
+  {
+    "template_key": "pending",
+    "title": "Pending payment reminder",
+    "body": "Hello {{member_name}},\n\nYour outstanding balance at Zenith Fitness is {{pending_amount}}.\nAdmission ID: {{admission_id}}\nPackage: {{plan}}\n\nPlease contact reception to complete your payment.\n\nTeam Zenith Fitness",
+    "variables": [
+      "member_name",
+      "admission_id",
+      "phone",
+      "gym_name",
+      "gym_phone",
+      "plan",
+      "start_date",
+      "end_date",
+      "amount_paid",
+      "pending_amount"
+    ]
+  },
+  {
+    "template_key": "member_review",
+    "title": "Expired member follow-up",
+    "body": "Hello {{member_name}},\n\nYour Zenith Fitness membership ended on {{end_date}}.\nAdmission ID: {{admission_id}}\n\nWe would be happy to welcome you back. Please let us know when you would like to rejoin, or how we can help.\n\nTeam Zenith Fitness",
+    "variables": [
+      "member_name",
+      "admission_id",
+      "phone",
+      "gym_name",
+      "gym_phone",
+      "plan",
+      "start_date",
+      "end_date",
+      "return_date",
+      "next_follow_up_date",
+      "reason"
+    ]
+  }
+]

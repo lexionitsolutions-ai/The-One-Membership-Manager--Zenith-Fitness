@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zenith Fitness | Member Update</title>
+  <link rel="stylesheet" href="forms-modern.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-brand" href="index.html" aria-label="Zenith Fitness home">
+    <img src="assets/zenith-logo.png" alt="Zenith Fitness logo">
+    <span>Zenith Fitness</span>
+  </a>
+  <label class="form-navigation">Page<select id="formNavigation" aria-label="Go to page"><option value="/dashboard/">Dashboard</option><option value="index.html">New Admission</option><option value="renewal.html">Renewal</option><option value="update.html" selected>Member Update</option><option value="pt.html">Personal Training</option><option value="enquire.html">Enquire</option><option value="/fingerprint/">Fingerprint Sync</option></select></label>
+</nav>
+
+<div class="container">
+  <header class="form-intro"><div><h1>Member update</h1><p>Correct details, adjust membership dates or collect pending payments.</p></div></header>
+
+  <div class="section">
+    <h2>Find Member</h2>
+    <div class="row">
+      <input type="text" id="searchMember" placeholder="Enter Mobile Number or Admission ID">
+      <button type="button" id="searchBtn">Search</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Current Details</h2>
+    <div class="row">
+      <input type="text" id="memberName" placeholder="Name" readonly disabled>
+      <input type="text" id="memberId" placeholder="Admission ID" readonly disabled>
+    </div>
+    <div class="row">
+      <input type="text" id="currentPlan" placeholder="Current Plan" readonly disabled>
+      <input type="text" id="currentStartDate" placeholder="Current Start Date" readonly disabled>
+      <input type="text" id="currentEndDate" placeholder="Current End Date" readonly disabled>
+    </div>
+    <div class="row">
+      <input type="text" id="currentPaymentStatus" placeholder="Payment Status" readonly disabled>
+      <input type="number" id="currentPendingAmount" placeholder="Pending Amount" readonly disabled>
+    </div>
+  </div>
+
+  <form id="profileForm"><div class="section"><h2>Correct member details</h2><div class="row"><input id="editName" required disabled><input id="editPhone" type="tel" required disabled></div><div class="row"><input id="profileNote" placeholder="For example: spelling correction" required disabled></div><button id="saveProfileBtn" disabled>Save contact details</button></div></form>
+  <div class="section"><h2>Select membership period</h2><p class="form-hint">Choose the period you want to edit or collect payment against. Older outstanding periods remain available.</p><select id="membershipSelect" disabled></select></div>
+  <form id="paymentForm">
+    <input type="hidden" id="hiddenAdmissionId">
+    <input type="hidden" id="hiddenMobile">
+
+    <div class="section">
+      <h2>Collect Pending Payment</h2>
+      <div class="row">
+        <input type="number" id="amountPaid" placeholder="Amount Received" required disabled>
+        <select id="paymentMode" required disabled>
+          <option value="">Payment Mode</option>
+          <option>Cash</option>
+          <option>UPI</option>
+          <option>Card</option>
+        </select>
+      </div>
+      <div class="row">
+        <input type="text" id="paymentNote" placeholder="Payment note optional" disabled>
+      </div>
+      <button type="submit" id="savePaymentBtn" disabled>Save Payment Update</button>
+    </div>
+  </form>
+
+  <form id="packageForm">
+    <div class="section">
+      <h2>Change package or dates</h2><p class="form-hint">This adjusts the selected period and keeps its agreed price and payment history. Use <a href="renewal.html">Renewal</a> to purchase an additional period with a new charge.</p>
+      <div class="row">
+        <select id="newPlan" required disabled>
+          <option value="">Select Package</option>
+          <option value="30">1 Month</option>
+          <option value="90">3 Months</option>
+          <option value="180">6 Months</option>
+          <option value="365">12 Months</option>
+          <option value="custom">Custom End Date</option>
+        </select>
+        <input type="date" id="newStartDate" required disabled>
+      </div>
+      <div class="row">
+        <input type="date" id="newEndDate" required disabled>
+        <input type="text" id="packageNote" placeholder="Reason / note" required disabled>
+      </div>
+      <button type="submit" id="savePackageBtn" disabled>Save Package Update</button>
+    </div>
+  </form>
+</div>
+
+<p class="form-hint">Changes save to Supabase. Secondary updates are queued. Enable the fallback and fingerprint connections in the local server settings to deliver them.</p><p id="formStatus" role="status" class="status-message"></p><script src="member-forms.js"></script>
+<script src="update.js"></script>
+<script src="forms-ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,962 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Member Access Sync</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f7f9;
+      --panel: #ffffff;
+      --text: #16202a;
+      --muted: #617080;
+      --line: #d9e1e8;
+      --primary: #146c5d;
+      --primary-dark: #0f5146;
+      --danger: #b42318;
+      --ok: #067647;
+      --soft: #eef5f3;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      box-shadow: 0 6px 20px rgba(22, 32, 42, 0.05);
+    }
+
+    .nav-inner {
+      width: min(980px, 100%);
+      min-height: 66px;
+      margin: 0 auto;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      font-size: 18px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav-link {
+      min-height: 40px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 0 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+      background: var(--soft);
+      border-color: #c7ded8;
+      color: var(--primary-dark);
+    }
+
+    main {
+      width: min(980px, 100%);
+      margin: 0 auto;
+      padding: 28px 24px;
+    }
+
+    .page {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 28px;
+      box-shadow: 0 14px 40px rgba(22, 32, 42, 0.08);
+    }
+
+    .page[hidden] {
+      display: none;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .actions {
+      margin: 28px 0;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .primary-button {
+      min-height: 48px;
+      border: 0;
+      border-radius: 6px;
+      padding: 0 22px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--primary);
+      color: white;
+    }
+
+    .primary-button:hover {
+      background: var(--primary-dark);
+    }
+
+    .secondary-button {
+      background: #304050;
+    }
+
+    .secondary-button:hover {
+      background: #1f2b36;
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: 0.65;
+    }
+
+    .status {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      min-height: 118px;
+      background: #fbfcfd;
+    }
+
+    .status-title {
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .status-title.ok {
+      color: var(--ok);
+    }
+
+    .status-title.error {
+      color: var(--danger);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px;
+      background: white;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 22px;
+      margin-bottom: 4px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    code {
+      display: block;
+      margin-top: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--danger);
+    }
+
+    .table-wrap {
+      margin-top: 22px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: auto;
+      background: #fbfcfd;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 560px;
+    }
+
+    th,
+    td {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef3f6;
+      color: #304050;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .empty-row {
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .day-tabs {
+      margin-top: 22px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .day-tab {
+      min-width: 118px;
+      min-height: 58px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px 12px;
+      background: white;
+      color: var(--muted);
+      font-weight: 700;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .day-tab.active {
+      background: var(--soft);
+      border-color: #c7ded8;
+      color: var(--primary-dark);
+    }
+
+    .day-tab-date,
+    .day-tab-count {
+      display: block;
+      white-space: nowrap;
+    }
+
+    .day-tab-count {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .day-panel {
+      margin-top: 14px;
+    }
+
+    .attendance-day {
+      margin-top: 22px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fbfcfd;
+    }
+
+    .attendance-day-header,
+    .absent-panel-header {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #eef3f6;
+      font-weight: 800;
+      color: #304050;
+    }
+
+    .absent-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+      gap: 18px;
+      align-items: start;
+      margin-top: 22px;
+    }
+
+    .absent-panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fbfcfd;
+    }
+
+    .member-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      max-height: 560px;
+      overflow: auto;
+      background: white;
+    }
+
+    .member-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .member-item:last-child {
+      border-bottom: 0;
+    }
+
+    .member-item.due-soon,
+    tr.due-soon td {
+      background: #fff1f0;
+    }
+
+    .member-name {
+      display: block;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .member-meta {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .renewal-label {
+      display: inline-block;
+      margin-top: 6px;
+      color: var(--danger);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    @media (max-width: 640px) {
+      .nav-inner {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 12px 14px;
+      }
+
+      .nav-links,
+      .nav-link {
+        width: 100%;
+      }
+
+      main {
+        padding: 14px;
+      }
+
+      .page {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 23px;
+      }
+
+      .primary-button {
+        width: 100%;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .absent-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="nav-inner">
+      <div class="brand">Gym Access System</div>
+      <nav class="nav-links" aria-label="Main pages">
+        <button class="nav-link active" type="button" data-page="syncPage">Member Access Sync</button>
+        <button class="nav-link" type="button" data-page="attendancePage">Attendance</button>
+        <button class="nav-link" type="button" data-page="absentPage">Absent Members</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="syncPage" class="page">
+      <h1>Member Access Sync</h1>
+      <p>Press the button to update the biometric device from Google Sheets.</p>
+
+      <div class="actions">
+        <button id="syncButton" class="primary-button" type="button">Sync Device Now</button>
+        <button id="syncTomorrowButton" class="primary-button secondary-button" type="button">Sync for Tomorrow</button>
+        <p id="lastRun">No manual sync run yet.</p>
+      </div>
+
+      <section class="status" aria-live="polite">
+        <div id="statusTitle" class="status-title">Ready</div>
+        <p id="statusMessage">The device will allow active members and restrict inactive members after a successful sync.</p>
+        <div id="metrics" class="grid" hidden></div>
+        <code id="errorBox" hidden></code>
+      </section>
+    </section>
+
+    <section id="attendancePage" class="page" hidden>
+      <h1>Attendance</h1>
+      <p>Recent member attendance from the biometric device.</p>
+
+      <div class="actions">
+        <button id="refreshAttendance" class="primary-button" type="button">Refresh Attendance</button>
+        <p id="attendanceLastLoaded">Attendance not loaded yet.</p>
+      </div>
+
+      <section class="status" aria-live="polite">
+        <div id="attendanceStatusTitle" class="status-title">Ready</div>
+        <p id="attendanceStatusMessage">Open this page or press refresh to load member IDs and in time.</p>
+        <code id="attendanceErrorBox" hidden></code>
+      </section>
+
+      <div id="attendanceDateTabs" class="day-tabs"></div>
+      <div id="attendanceDailyPanel" class="day-panel">
+        <div class="attendance-day">
+          <div class="attendance-day-header">No attendance loaded</div>
+          <table>
+            <tbody id="attendanceRows">
+              <tr>
+                <td class="empty-row" colspan="3">No attendance loaded.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="absentPage" class="page" hidden>
+      <h1>Absent Members</h1>
+      <p>Active members who did not appear in biometric attendance for each of the last 7 days.</p>
+
+      <div class="actions">
+        <button id="refreshAbsent" class="primary-button" type="button">Refresh Absent</button>
+        <p id="absentLastLoaded">Absent data not loaded yet.</p>
+      </div>
+
+      <section class="status" aria-live="polite">
+        <div id="absentStatusTitle" class="status-title">Ready</div>
+        <p id="absentStatusMessage">Open this page or press refresh to load absent members.</p>
+        <code id="absentErrorBox" hidden></code>
+      </section>
+
+      <div id="absentDateTabs" class="day-tabs"></div>
+
+      <div class="absent-layout">
+        <div id="absentDailyPanel" class="day-panel"></div>
+        <aside class="absent-panel">
+          <div id="uniqueAbsentTitle" class="absent-panel-header">Unique absentees</div>
+          <ul id="uniqueAbsentMembers" class="member-list">
+            <li class="member-item"><span class="member-meta">No absent data loaded.</span></li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const navButtons = document.querySelectorAll('.nav-link');
+    const pages = document.querySelectorAll('.page');
+    const syncButton = document.getElementById('syncButton');
+    const syncTomorrowButton = document.getElementById('syncTomorrowButton');
+    const statusTitle = document.getElementById('statusTitle');
+    const statusMessage = document.getElementById('statusMessage');
+    const metrics = document.getElementById('metrics');
+    const errorBox = document.getElementById('errorBox');
+    const lastRun = document.getElementById('lastRun');
+    const refreshAttendance = document.getElementById('refreshAttendance');
+    const attendanceRows = document.getElementById('attendanceRows');
+    const attendanceLastLoaded = document.getElementById('attendanceLastLoaded');
+    const attendanceStatusTitle = document.getElementById('attendanceStatusTitle');
+    const attendanceStatusMessage = document.getElementById('attendanceStatusMessage');
+    const attendanceErrorBox = document.getElementById('attendanceErrorBox');
+    const attendanceDateTabs = document.getElementById('attendanceDateTabs');
+    const attendanceDailyPanel = document.getElementById('attendanceDailyPanel');
+    const refreshAbsent = document.getElementById('refreshAbsent');
+    const absentLastLoaded = document.getElementById('absentLastLoaded');
+    const absentStatusTitle = document.getElementById('absentStatusTitle');
+    const absentStatusMessage = document.getElementById('absentStatusMessage');
+    const absentErrorBox = document.getElementById('absentErrorBox');
+    const absentDateTabs = document.getElementById('absentDateTabs');
+    const absentDailyPanel = document.getElementById('absentDailyPanel');
+    const uniqueAbsentTitle = document.getElementById('uniqueAbsentTitle');
+    const uniqueAbsentMembers = document.getElementById('uniqueAbsentMembers');
+    let attendanceLoaded = false;
+    let selectedAttendanceDate = '';
+    let selectedAbsentDate = '';
+    let latestAttendanceResult = null;
+
+    function setStatus(type, title, message) {
+      statusTitle.className = `status-title ${type || ''}`;
+      statusTitle.textContent = title;
+      statusMessage.textContent = message;
+    }
+
+    function setAttendanceStatus(type, title, message) {
+      attendanceStatusTitle.className = `status-title ${type || ''}`;
+      attendanceStatusTitle.textContent = title;
+      attendanceStatusMessage.textContent = message;
+    }
+
+    function setAbsentStatus(type, title, message) {
+      absentStatusTitle.className = `status-title ${type || ''}`;
+      absentStatusTitle.textContent = title;
+      absentStatusMessage.textContent = message;
+    }
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function showPage(pageId) {
+      pages.forEach((page) => {
+        page.hidden = page.id !== pageId;
+      });
+
+      navButtons.forEach((button) => {
+        button.classList.toggle('active', button.dataset.page === pageId);
+      });
+
+      if ((pageId === 'attendancePage' || pageId === 'absentPage') && !attendanceLoaded) {
+        loadAttendance();
+      }
+    }
+
+    function renderMetrics(result) {
+      const items = [
+        ['Total Members', result.totalMembers],
+        ['Active Allowed', result.activeAllowed],
+        ['Expired Restricted', result.expiredRestricted],
+        ['Inactive Restricted', result.inactiveRestricted],
+        ['Unknown Restricted', result.unknownRestricted],
+      ];
+
+      metrics.innerHTML = items.map(([label, value]) => `
+        <div class="metric">
+          <strong>${Number(value || 0)}</strong>
+          <span>${label}</span>
+        </div>
+      `).join('');
+      metrics.hidden = false;
+    }
+
+    function renderAttendance(rows, groups = []) {
+      if (groups.length) {
+        if (!selectedAttendanceDate || !groups.some((group) => group.date === selectedAttendanceDate)) {
+          selectedAttendanceDate = groups[0].date;
+        }
+
+        attendanceDateTabs.innerHTML = groups.map((group) => `
+          <button class="day-tab ${group.date === selectedAttendanceDate ? 'active' : ''}" type="button" data-date="${escapeHtml(group.date)}">
+            <span class="day-tab-date">${escapeHtml(group.label)}</span>
+            <span class="day-tab-count">${Number(group.count ?? group.entries?.length ?? 0)} punches</span>
+          </button>
+        `).join('');
+
+        const selectedGroup = groups.find((group) => group.date === selectedAttendanceDate) || groups[0];
+        attendanceDailyPanel.innerHTML = `
+          <section class="attendance-day">
+            <div class="attendance-day-header">${escapeHtml(selectedGroup.label)} attendance (${Number(selectedGroup.count ?? selectedGroup.entries?.length ?? 0)} punches)</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Member ID</th>
+                  <th>Name</th>
+                  <th>In Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(selectedGroup.entries || []).length ? selectedGroup.entries.map((row) => `
+                  <tr class="${row.renewalDue ? 'due-soon' : ''}">
+                    <td>${escapeHtml(row.id)}</td>
+                    <td>
+                      ${escapeHtml(row.name)}
+                      ${row.renewalDue ? '<span class="renewal-label">Renewal in 5 days or less</span>' : ''}
+                    </td>
+                    <td>${escapeHtml(formatEntryTime(row.inTime))}</td>
+                  </tr>
+                `).join('') : '<tr><td class="empty-row" colspan="3">No attendance for this day.</td></tr>'}
+              </tbody>
+            </table>
+          </section>
+        `;
+
+        attendanceDateTabs.querySelectorAll('.day-tab').forEach((button) => {
+          button.addEventListener('click', () => {
+            selectedAttendanceDate = button.dataset.date;
+            renderAttendance(rows, groups);
+          });
+        });
+        return;
+      }
+
+      attendanceDateTabs.innerHTML = '';
+      if (!rows.length) {
+        attendanceDailyPanel.innerHTML = '<div class="attendance-day"><div class="attendance-day-header">No attendance found</div><table><tbody><tr><td class="empty-row" colspan="3">No attendance records found.</td></tr></tbody></table></div>';
+        return;
+      }
+
+      attendanceDailyPanel.innerHTML = `
+        <section class="attendance-day">
+          <div class="attendance-day-header">Recent attendance (${rows.length} punches)</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Member ID</th>
+                <th>Name</th>
+                <th>In Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map((row) => `
+                <tr class="${row.renewalDue ? 'due-soon' : ''}">
+                  <td>${escapeHtml(row.id)}</td>
+                  <td>
+                    ${escapeHtml(row.name)}
+                    ${row.renewalDue ? '<span class="renewal-label">Renewal in 5 days or less</span>' : ''}
+                  </td>
+                  <td>${escapeHtml(formatEntryTime(row.inTime))}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </section>
+      `;
+    }
+
+    function isExpiryWithinDays(expiryDateIso, days) {
+      if (!expiryDateIso) return false;
+
+      const expiry = new Date(`${expiryDateIso}T00:00:00`);
+      if (isNaN(expiry.getTime())) return false;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const limit = new Date(today);
+      limit.setDate(today.getDate() + days);
+      limit.setHours(23, 59, 59, 999);
+
+      return expiry >= today && expiry <= limit;
+    }
+
+    function formatExpiryDate(expiryDateIso) {
+      if (!expiryDateIso) return 'No expiry date';
+
+      const date = new Date(`${expiryDateIso}T00:00:00`);
+      if (isNaN(date.getTime())) return expiryDateIso;
+
+      return date.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+    }
+
+    function getMemberKey(member) {
+      return String(member.id || member.userId || member.name || '').trim();
+    }
+
+    function renderMemberList(members) {
+      if (!members.length) {
+        return '<li class="member-item"><span class="member-meta">No absent members found.</span></li>';
+      }
+
+      return members.map((member) => {
+        const dueSoon = member.renewalDue || isExpiryWithinDays(member.expiryDate, 5);
+
+        return `
+          <li class="member-item ${dueSoon ? 'due-soon' : ''}">
+            <span>
+              <span class="member-name">${escapeHtml(member.name)}</span>
+              <span class="member-meta">ID: ${escapeHtml(member.id)} | User: ${escapeHtml(member.userId || '-')} | Expiry: ${escapeHtml(formatExpiryDate(member.expiryDate))}</span>
+              ${dueSoon ? '<span class="renewal-label">Renewal in 5 days or less</span>' : ''}
+            </span>
+          </li>
+        `;
+      }).join('');
+    }
+
+    function renderUniqueAbsentMembers(groups) {
+      if (!groups.length) {
+        uniqueAbsentTitle.textContent = 'Unique absentees';
+        uniqueAbsentMembers.innerHTML = '<li class="member-item"><span class="member-meta">No absent data loaded.</span></li>';
+        return;
+      }
+
+      const absenceCounts = new Map();
+      const absentMembers = new Map();
+
+      for (const group of groups) {
+        for (const member of group.members || []) {
+          const key = getMemberKey(member);
+          if (!key) continue;
+
+          absenceCounts.set(key, (absenceCounts.get(key) || 0) + 1);
+          absentMembers.set(key, member);
+        }
+      }
+
+      const members = Array.from(absenceCounts.entries())
+        .filter(([, count]) => count === groups.length)
+        .map(([key]) => absentMembers.get(key))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      uniqueAbsentTitle.textContent = `${members.length} absent every day`;
+      uniqueAbsentMembers.innerHTML = renderMemberList(members);
+    }
+
+    function renderAbsentMembers(groups) {
+      if (!groups.length) {
+        absentDateTabs.innerHTML = '';
+        absentDailyPanel.innerHTML = '<div class="absent-panel"><div class="absent-panel-header">No absent data</div><ul class="member-list"><li class="member-item"><span class="member-meta">No absent members found.</span></li></ul></div>';
+        renderUniqueAbsentMembers([]);
+        return;
+      }
+
+      if (!selectedAbsentDate || !groups.some((group) => group.date === selectedAbsentDate)) {
+        selectedAbsentDate = groups[0].date;
+      }
+
+      absentDateTabs.innerHTML = groups.map((group) => `
+        <button class="day-tab ${group.date === selectedAbsentDate ? 'active' : ''}" type="button" data-date="${escapeHtml(group.date)}">
+          <span class="day-tab-date">${escapeHtml(group.label)}</span>
+          <span class="day-tab-count">${Number(group.count || 0)} absent</span>
+        </button>
+      `).join('');
+
+      const selectedGroup = groups.find((group) => group.date === selectedAbsentDate) || groups[0];
+      const activeCount = Number(selectedGroup.activeCount || 0);
+      const absentCount = Number(selectedGroup.count || 0);
+      absentDailyPanel.innerHTML = `
+        <div class="absent-panel">
+          <div class="absent-panel-header">${escapeHtml(selectedGroup.label)}: ${absentCount} absent of ${activeCount} active</div>
+          <ul class="member-list">${renderMemberList(selectedGroup.members || [])}</ul>
+        </div>
+      `;
+
+      absentDateTabs.querySelectorAll('.day-tab').forEach((button) => {
+        button.addEventListener('click', () => {
+          selectedAbsentDate = button.dataset.date;
+          renderAbsentMembers(groups);
+        });
+      });
+
+      renderUniqueAbsentMembers(groups);
+    }
+
+    function formatEntryTime(value) {
+      const date = new Date(value);
+
+      if (isNaN(date.getTime())) {
+        return value || 'Unknown Time';
+      }
+
+      const day = date.toLocaleDateString('en-IN', {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+      });
+      const time = date.toLocaleTimeString('en-IN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      });
+
+      return `${day}, ${time}`;
+    }
+
+    function formatSyncError(result) {
+      if (result?.alreadyRunning) {
+        const started = result.startedAt
+          ? ` Started at ${new Date(result.startedAt).toLocaleString()}.`
+          : '';
+        return `A sync is already running.${started}`;
+      }
+
+      return result?.message || 'Sync failed';
+    }
+
+    function getTomorrowDateKey() {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const yyyy = tomorrow.getFullYear();
+      const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+      const dd = String(tomorrow.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    async function runAccessSync({ asOf = '', button, defaultText, runningText }) {
+      syncButton.disabled = true;
+      syncTomorrowButton.disabled = true;
+      button.textContent = runningText;
+      metrics.hidden = true;
+      errorBox.hidden = true;
+      errorBox.textContent = '';
+
+      const syncLabel = asOf ? ` for ${formatExpiryDate(asOf)}` : '';
+      setStatus('', 'Sync running', `Reading Google Sheets and updating the biometric device${syncLabel}.`);
+
+      try {
+        const response = await fetch('/sync-access', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(asOf ? { asOf } : {}),
+        });
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(formatSyncError(result));
+        }
+
+        const completedLabel = result.syncAsOf ? ` for ${formatExpiryDate(result.syncAsOf)}` : '';
+        setStatus('ok', 'Sync complete', `The device has been updated${completedLabel}.`);
+        renderMetrics(result);
+        lastRun.textContent = `Last synced: ${new Date(result.completedAt).toLocaleString()}`;
+      } catch (err) {
+        setStatus('error', 'Sync failed', 'The device was not confirmed as updated.');
+        errorBox.hidden = false;
+        errorBox.textContent = err.message || String(err);
+        lastRun.textContent = `Failed: ${new Date().toLocaleString()}`;
+      } finally {
+        syncButton.disabled = false;
+        syncTomorrowButton.disabled = false;
+        button.textContent = defaultText;
+      }
+    }
+
+    async function loadAttendance() {
+      refreshAttendance.disabled = true;
+      refreshAbsent.disabled = true;
+      refreshAttendance.textContent = 'Loading...';
+      refreshAbsent.textContent = 'Loading...';
+      attendanceErrorBox.hidden = true;
+      attendanceErrorBox.textContent = '';
+      absentErrorBox.hidden = true;
+      absentErrorBox.textContent = '';
+      setAttendanceStatus('', 'Loading attendance', 'Reading recent biometric device punches.');
+      setAbsentStatus('', 'Loading absent members', 'Comparing active members with the last 7 days of punches.');
+
+      try {
+        const response = await fetch('/attendance');
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || 'Attendance load failed');
+        }
+
+        latestAttendanceResult = result;
+        renderAttendance(result.attendance || [], result.attendanceByDay || []);
+        renderAbsentMembers(result.absentByDay || []);
+        attendanceLoaded = true;
+        const uniqueAbsentCount = countAbsentEveryDay(result.absentByDay || []);
+        setAttendanceStatus('ok', 'Attendance loaded', `${Number(result.count || 0)} entries from the last 7 days shown.`);
+        setAbsentStatus('ok', 'Absent data loaded', `${uniqueAbsentCount} active members were absent every day. Active members checked: ${Number(result.activeMemberCount || 0)}.`);
+        attendanceLastLoaded.textContent = `Last loaded: ${new Date(result.loadedAt).toLocaleString()}`;
+        absentLastLoaded.textContent = `Last loaded: ${new Date(result.loadedAt).toLocaleString()}`;
+      } catch (err) {
+        setAttendanceStatus('error', 'Attendance load failed', 'Attendance could not be read from the device.');
+        setAbsentStatus('error', 'Absent load failed', 'Absent members could not be calculated.');
+        attendanceErrorBox.hidden = false;
+        attendanceErrorBox.textContent = err.message || String(err);
+        absentErrorBox.hidden = false;
+        absentErrorBox.textContent = err.message || String(err);
+        attendanceLastLoaded.textContent = `Failed: ${new Date().toLocaleString()}`;
+        absentLastLoaded.textContent = `Failed: ${new Date().toLocaleString()}`;
+      } finally {
+        refreshAttendance.disabled = false;
+        refreshAbsent.disabled = false;
+        refreshAttendance.textContent = 'Refresh Attendance';
+        refreshAbsent.textContent = 'Refresh Absent';
+      }
+    }
+
+    function countAbsentEveryDay(groups) {
+      if (!groups.length) return 0;
+
+      const counts = new Map();
+      for (const group of groups) {
+        for (const member of group.members || []) {
+          const key = getMemberKey(member);
+          if (key) counts.set(key, (counts.get(key) || 0) + 1);
+        }
+      }
+
+      return Array.from(counts.values()).filter((count) => count === groups.length).length;
+    }
+
+    navButtons.forEach((button) => {
+      button.addEventListener('click', () => showPage(button.dataset.page));
+    });
+
+    refreshAttendance.addEventListener('click', loadAttendance);
+    refreshAbsent.addEventListener('click', loadAttendance);
+
+    syncButton.addEventListener('click', () => {
+      runAccessSync({
+        button: syncButton,
+        defaultText: 'Sync Device Now',
+        runningText: 'Syncing...',
+      });
+    });
+
+    syncTomorrowButton.addEventListener('click', () => {
+      runAccessSync({
+        asOf: getTomorrowDateKey(),
+        button: syncTomorrowButton,
+        defaultText: 'Sync for Tomorrow',
+        runningText: 'Syncing Tomorrow...',
+      });
+    });
+  </script>
+</body>
+</html>

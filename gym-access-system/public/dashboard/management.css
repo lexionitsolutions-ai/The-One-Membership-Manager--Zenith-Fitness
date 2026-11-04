@@ -11,3 +11,30 @@ body{font-size:16px;color:#283039}.sidebar{width:246px;padding:25px 17px 15px;ov
 .attendance-messages{white-space:normal}
 .attendance-renewal{white-space:normal;line-height:1.5}
 @media(max-width:720px){.data-table tr.attendance-renewal-soon{background:#fff0f0;border-color:#f4caca}.attendance-contact{align-items:flex-start}.attendance-messages{width:100%}}
+
+/* Review filters and contact timelines. */
+.review-main-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));max-width:850px}
+.review-main-filters .filter-field{max-width:none;min-width:0}
+.review-parameters{border:1px solid #dedbd2;border-radius:10px;background:#fff;margin-bottom:20px;padding:14px 18px}
+.review-parameters summary{cursor:pointer;font-weight:600;color:#29354c}
+.review-parameters .management-filters{padding:18px 0 0}
+.lead-card.review-not-interested{background:#fff0f0;border-color:#edb5b5;border-left:5px solid #c93838}
+.lead-card.review-rejoining{background:#edf9f0;border-color:#a9d8b6;border-left:5px solid #2c8b50}
+.review-not-interested .badge{background:#fbe0e0;color:#a32424}
+.review-rejoining .badge{background:#d9efdf;color:#236e3f}
+.review-status-history{flex:0 1 235px;min-width:165px;text-align:right}
+.review-contact-summary,.review-last-contact{font-size:11px;line-height:1.5;margin:8px 0;color:#657186}
+.review-timeline{list-style:none;margin:12px 0 0;padding:0 0 0 14px;text-align:left;border-left:2px solid #b7c2d1}
+.review-timeline li{position:relative;padding:0 0 14px 10px}
+.review-timeline li:last-child{padding-bottom:0}
+.review-timeline li:before{content:'';position:absolute;left:-20px;top:4px;width:10px;height:10px;border-radius:50%;background:#5a6d8b;border:2px solid #fff}
+.review-timeline strong,.review-timeline span,.review-timeline small{display:block;font-size:11px;line-height:1.6;overflow-wrap:anywhere}
+.review-timeline span,.review-timeline small{color:#657186}
+.review-contact-history .text-button{font-size:11px;margin-top:8px}
+.review-source-label{font-size:12px;font-weight:600;color:#67758a;margin:0 0 8px}
+.scheduled-review .review-card{height:calc(100% - 26px)}
+@media(max-width:720px){.review-main-filters{grid-template-columns:1fr}.review-card .lead-card-top{flex-wrap:wrap}.review-status-history{flex-basis:100%;text-align:left;min-width:0}.review-timeline{margin-left:5px}.review-parameters .filter-field{min-width:100%}}
+
+.review-card .lead-card-top>div:first-child{min-width:0}
+.review-card h3{overflow-wrap:anywhere}
+@media(min-width:721px) and (max-width:1180px){.review-card .lead-card-top{flex-direction:column}.review-status-history{width:100%;text-align:left;flex-basis:auto}}

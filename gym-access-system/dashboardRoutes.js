@@ -206,6 +206,7 @@ function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessio
           data.enquiries=await load('enquiries','id,full_name,phone,interested_plan,status,follow_up_date,notes,created_at');data.enquirySetupRequired=true;
         }),
         load('member_reviews','id,member_id,membership_id,status,reason,reason_other,return_date,next_follow_up_date,contact_type,remark,updated_at').then(x=>{data.memberReviews=x;data.memberReviewSetupRequired=false;}).catch(e=>{if(!e.schemaMissing)throw e;data.memberReviews=[];data.memberReviewSetupRequired=true;}),
+        load('member_review_history','id,membership_id,recorded_by,status,reason,reason_other,return_date,next_follow_up_date,contact_type,remark,created_at').then(x=>{data.memberReviewHistory=x;}).catch(e=>{if(!e.schemaMissing)throw e;data.memberReviewHistory=[];data.memberReviewHistorySetupRequired=true;data.receptionActivitySetupRequired=true;}),
         load('expenses','id,expense_date,category,description,amount,payment_mode,status').then(x=>{data.expenses=x;}),
         load('historical_receipts','id,received_at,description,transaction_type,amount,payment_mode').then(x=>{data.historicalReceipts=x;}),
         Promise.all([load('pt_contracts','id,member_id,trainer_id,package,start_date,end_date,total_amount,notes,created_at'),load('pt_payments','id,contract_id,amount,payment_mode,paid_at'),load('pt_trainers','id,name')]).then(([contracts,payments,trainers])=>{data.ptContracts=contracts;data.ptPayments=payments;data.ptTrainers=trainers;data.ptSetupRequired=false;}).catch(e=>{if(!e.schemaMissing)throw e;data.ptSetupRequired=true;}),
@@ -214,7 +215,7 @@ function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessio
         rows('member_private_details',`select=member_id,address&${gym}&order=member_id.asc`,session.accessToken).then(x=>{data.privateDetails=x;}),
         load('migration_records','id,import_status').then(x=>{data.reviewRecords=x;}),
         load('staff', 'id,user_id,full_name,role,is_active').then(x => { data.staff = x; }),
-        ...[['enquiry_followups','enquiryFollowups','id,enquiry_id,actor_user_id,from_status,to_status,next_follow_up_date,remark,created_at'],['member_review_history','memberReviewHistory','id,membership_id,recorded_by,status,reason,reason_other,return_date,next_follow_up_date,contact_type,remark,created_at']].map(([table,key,fields])=>{
+        ...[['enquiry_followups','enquiryFollowups','id,enquiry_id,actor_user_id,from_status,to_status,next_follow_up_date,remark,created_at']].map(([table,key,fields])=>{
           const period=reportRange(range.from,range.to,new Date(),days);
           return load(table,fields,`&created_at=gte.${period.start.toISOString()}&created_at=lt.${period.end.toISOString()}`).then(x=>{data[key]=x;}).catch(e=>{if(!e.schemaMissing)throw e;data[key]=[];data.receptionActivitySetupRequired=true;});
         }),

@@ -43,3 +43,34 @@ cannot invent a renewal or payment. If a later period expires again, it starts a
 fresh follow-up cycle while previous history remains available.
 
 Review notes are stored in Supabase; the existing six fallback tabs are unchanged.
+
+## Review filters, scheduled calls and contact timeline
+
+Review Members keeps Expiry month, Match date and Select date visible. Search,
+Follow-ups, Reason, Clear date and Reset parameters are inside the Parameters
+expander. Exact dates work across expiry months; selecting an expiry month clears
+an exact date. The Parameters expander retains its open state while filtering.
+
+Not Interested members remain visible in the default open-review selection with
+red cards. A member with a rejoin date has a green card unless Not Interested is
+the current status, which takes precedence. Renewed memberships still close the
+old review cycle through the existing renewal rules.
+
+An unrenewed review with a next follow-up date appears in the Follow-ups calls
+list alongside enquiries. Yesterday, Today, Tomorrow, Overdue and exact-date
+filters all use that date. The call card edits the original member review and
+shows its history; it never creates a duplicate enquiry. Once renewed, the old
+review leaves the calls list. Explicitly scheduled Not Interested reviews also
+appear on the date staff selected.
+
+Below the status badge, each card shows its saved update count, recorded contact
+count, the last four timeline entries and intervals between updates. History
+opens all entries. Counts cover the current membership review cycle. Contact
+entries are saved Call, WhatsApp or Visit updates with a non-Pending status;
+clicking a phone link alone does not record a completed contact.
+
+Admin and receptionist dashboards read the complete gym-scoped review history,
+independently of the overview report date range. Only display fields are attached
+to member cards; RPC results and request hashes are excluded. Trainers cannot
+read this history. The existing review and history tables are used; no migration
+is needed. Saving retains the existing request-ID retry and concurrency checks.

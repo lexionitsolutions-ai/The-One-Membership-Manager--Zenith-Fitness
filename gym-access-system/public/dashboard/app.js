@@ -39,11 +39,12 @@ function table(headers, rows, emptyTitle = 'Nothing here just yet') { return row
 function panel(title, subtitle, content, action = '', extra = '') { return `<section class="panel ${extra}"><div class="panel-heading"><div><h2>${title}</h2><p class="panel-subtitle">${subtitle}</p></div>${action}</div>${content}</section>`; }
 function goButton(page, label) { return `<button class="panel-link" data-go="${page}">${label} ↗</button>`; }
 function renderNav() {
-  const available = state.role === 'admin' ? Object.keys(navs) : state.role === 'receptionist' ? ['admissions','renewed','renewals','pt','enquiries','leads','attendance','review','members','pending','expenses'] : ['overview','members','attendance'];
+  const available = state.role === 'admin' ? Object.keys(navs) : state.role === 'receptionist' ? ['overview','admissions','renewed','renewals','pt','enquiries','leads','attendance','review','members','pending','expenses'] : ['overview','members','attendance'];
   if (!available.includes(state.page)) state.page = available[0];
   $('#mainNav').innerHTML = available.map(key=>`<button class="nav-item ${state.page === key?'active':''}" data-go="${key}" ${state.page===key?'aria-current="page"':''}>${icon(key)}<span>${key==='members'&&state.role==='trainer'?'My members':navs[key]}</span>${key==='members' && state.data ? `<span class="nav-count">${fmt(state.data.metrics.totalMembers)}</span>` : ''}</button>`).join('');
 }
 function renderShell() {
+  $('#startupScreen').hidden = true;
   $('#exportButton').hidden=state.role==='receptionist';$('#exportButton').disabled=state.role==='receptionist';
   $('#loginScreen').hidden = true; $('#workspace').hidden = false;
   $('#previewBanner').hidden = !state.preview;
@@ -140,10 +141,10 @@ async function loadDashboard() {
   } catch(error) {
     if(generation!==state.generation)return;
     if([401,403].includes(error.status)&&!state.preview){showLogin();$('#loginError').textContent=error.status===403?error.message:'Your session has ended. Please sign in again.';}
-    else { $('#errorBanner').textContent=error.message;$('#errorBanner').hidden=false;document.body.classList.add('stale');$('#connectionText').textContent='Refresh needed';$('#freshness').textContent='Could not refresh · showing the last loaded data';if(!state.data)$('#pageBody').innerHTML=empty('Your workspace is taking a moment.', 'Use the refresh button to try again.'); }
+    else { renderShell();$('#errorBanner').textContent=error.message;$('#errorBanner').hidden=false;document.body.classList.add('stale');$('#connectionText').textContent='Refresh needed';$('#freshness').textContent='Could not refresh · showing the last loaded data';if(!state.data)$('#pageBody').innerHTML=empty('Your workspace is taking a moment.', 'Use the refresh button to try again.'); }
   } finally {if(generation===state.generation){state.busy=false;$('#refreshButton').disabled=false;$('#periodSelect').disabled=false;$('#previewRole').disabled=false;}}
 }
-function showLogin() { $('#entryFields').innerHTML='';if($('#entryDialog').open)$('#entryDialog').close();state.generation++;state.busy=false;state.data=null;state.page='overview';$('#pageBody').innerHTML='';$('#workspace').hidden=true;$('#loginScreen').hidden=false;$('#password').value='';$('#sidebar').classList.remove('open');$('#sidebarScrim').hidden=true;$('#menuButton').setAttribute('aria-expanded','false');$('#periodSelect').disabled=false;$('#previewRole').disabled=false; }
+function showLogin() { $('#startupScreen').hidden=true; $('#entryFields').innerHTML='';if($('#entryDialog').open)$('#entryDialog').close();state.generation++;state.busy=false;state.data=null;state.page='overview';$('#pageBody').innerHTML='';$('#workspace').hidden=true;$('#loginScreen').hidden=false;$('#password').value='';$('#sidebar').classList.remove('open');$('#sidebarScrim').hidden=true;$('#menuButton').setAttribute('aria-expanded','false');$('#periodSelect').disabled=false;$('#previewRole').disabled=false; }
 function navigate(page) { state.page=page;state.search='';state.filter='all';renderPage();$('#sidebar').classList.remove('open');$('#sidebarScrim').hidden=true;$('#menuButton').setAttribute('aria-expanded','false');window.scrollTo({top:0,behavior:'instant'});if(!state.preview&&['overview','attendance','parameters'].includes(page))loadDashboard(); }
 async function startPreview() {state.generation++;state.busy=false;state.preview=true;state.role='admin';state.data=null;state.page='overview';history.replaceState(null,'','?preview=admin');renderShell();await loadDashboard();}
 function exportReport() {
@@ -186,4 +187,5 @@ $('#sidebarScrim').addEventListener('click',()=>{$('#sidebar').classList.remove(
 document.addEventListener('keydown',event=>{if(event.key==='Escape'){$('#sidebar').classList.remove('open');$('#sidebarScrim').hidden=true;$('#menuButton').setAttribute('aria-expanded','false');}});
 setInterval(()=>{if(!document.hidden&&state.data&&!state.preview)loadDashboard();},60000);
 try{const updatesChannel=new BroadcastChannel('zenith-membership-updates');updatesChannel.addEventListener('message',()=>{if(state.data&&!state.preview)loadDashboard();});}catch{}
-(async()=>{if(state.preview){renderShell();await loadDashboard();return;}try{const {staff}=await api('session');state.role=staff.role;renderShell();await loadDashboard();}catch(error){showLogin();if(error.status!==401)$('#loginError').textContent=error.message;}})();
+// The dashboard endpoint validates the saved session and returns the staff role.
+(async()=>{if(state.preview)renderShell();await loadDashboard();})();

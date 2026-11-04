@@ -11,11 +11,19 @@ function buildAttendanceReport(data,now=new Date()){
  const status=data.attendanceStatus;
  const completeThrough=status?.imported_at?shiftDay(dayKey(status.imported_at),-1):null;
  const covered=day=>Boolean(status?.records>0&&status?.coverage_start&&day>=status.coverage_start&&completeThrough&&day<=completeThrough);
- const info=m=>({member_id:m.id,member_name:m.full_name,admission_id:m.admission_id,phone:m.phone||'',last_seen:lastSeen.get(m.id)||null});
+ const renewal=m=>{
+  const confirmed=periods.filter(p=>p.member_id===m.id&&p.status==='confirmed').sort((a,b)=>a.start_date.localeCompare(b.start_date));
+  let end=confirmed.filter(p=>p.start_date<=today&&p.end_date>=today).map(p=>p.end_date).sort().at(-1);
+  if(end){for(const p of confirmed)if(p.start_date<=shiftDay(end,1)&&p.end_date>end)end=p.end_date;}
+  else end=confirmed.filter(p=>p.end_date<today).map(p=>p.end_date).sort().at(-1)||null;
+  return {renewal_date:end,renewal_due_soon:Boolean(end&&end>=today&&end<=shiftDay(today,15))};
+ };
+ const renewalByMember=new Map(members.map(m=>[m.id,renewal(m)]));
+ const info=m=>({member_id:m.id,member_name:m.full_name,admission_id:m.admission_id,phone:m.phone||'',...renewalByMember.get(m.id),last_seen:lastSeen.get(m.id)||null});
  const groups=days.map(day=>{const eligible=members.filter(m=>active(m,day)),present=eligible.filter(m=>visits.has(day+':'+m.id));return {day,covered:covered(day),active_count:eligible.length,present_count:present.length,absentees:covered(day)?eligible.filter(m=>!visits.has(day+':'+m.id)).map(info):[]};});
  const allCovered=days.every(covered);
  return {from:days[0],to:days[6],today,imported_at:status?.imported_at||null,coverage_start:status?.coverage_start||null,warning:status?.warning||null,device_time:status?.device_time||null,latest_device_punch:status?.latest_device_punch||null,allCovered,days:groups,
   consecutive:allCovered?members.filter(m=>days.every(day=>active(m,day)&&!visits.has(day+':'+m.id))).map(info):[],
-  attendance:logs.filter(a=>dayKey(a.punched_at)>=days[0]&&dayKey(a.punched_at)<=today).sort((a,b)=>b.punched_at.localeCompare(a.punched_at)).map(a=>({...a,member_name:byMember.get(a.member_id)?.full_name||'Unmapped device user',admission_id:byMember.get(a.member_id)?.admission_id||a.device_user_id,phone:byMember.get(a.member_id)?.phone||''}))};
+  attendance:logs.filter(a=>dayKey(a.punched_at)>=days[0]&&dayKey(a.punched_at)<=today).sort((a,b)=>b.punched_at.localeCompare(a.punched_at)).map(a=>({...a,member_name:byMember.get(a.member_id)?.full_name||'Unmapped device user',admission_id:byMember.get(a.member_id)?.admission_id||a.device_user_id,phone:byMember.get(a.member_id)?.phone||'',...renewalByMember.get(a.member_id)}))};
 }
 module.exports={buildAttendanceReport,shiftDay};

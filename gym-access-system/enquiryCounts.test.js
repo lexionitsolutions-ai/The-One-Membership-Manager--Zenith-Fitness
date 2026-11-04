@@ -1,0 +1,5 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const {buildDashboard}=require('./dashboardMetrics');
+test('enquiry counts use India submission dates for daily, Monday-weekly and monthly updates for admin and reception',()=>{
+ const data={enquiries:[{created_at:'2026-10-25T18:29:59Z'},{created_at:'2026-10-25T18:30:00Z'},{created_at:'2026-10-31T18:29:59Z'},{created_at:'2026-10-31T18:30:00Z'},{created_at:'2026-11-01T02:00:00Z'},{created_at:'2026-11-02T02:00:00Z'},{created_at:null},{created_at:'invalid'}]};
+ for(const role of ['admin','receptionist']){const d=buildDashboard(data,{role,now:new Date('2026-11-01T08:00:00Z')});assert.equal(d.gymOverview.dailyEnquiries,2);assert.equal(d.gymOverview.weeklyEnquiries,4);assert.equal(d.gymOverview.monthlyEnquiries,2);const filtered=buildDashboard(data,{role,now:new Date('2026-11-01T08:00:00Z'),from:'2026-10-26',to:'2026-10-31'});assert.equal(filtered.gymOverview.dailyEnquiries,1);assert.equal(filtered.gymOverview.weeklyEnquiries,2);assert.equal(filtered.gymOverview.monthlyEnquiries,3);}
+});

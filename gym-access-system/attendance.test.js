@@ -1,5 +1,16 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');
 const {buildAttendanceReport}=require('./attendanceReports');const {prepareAttendance,createAttendanceImporter,deviceTime}=require('./attendanceImport');const {acquireDevice}=require('./deviceLock');
+test('attendance renewal warnings use today, include the fifteenth day and respect prepaid extensions',()=>{
+ const members=['today','fifteen','sixteen','expired','extended','cancelled','gap'].map((id,i)=>({id,full_name:id,admission_id:'ZF-'+i,device_user_id:i+1}));
+ const ends=['2026-11-04','2026-11-19','2026-11-20','2026-11-03','2026-11-10','2026-11-10','2026-11-10'];
+ const memberships=members.map((m,i)=>({member_id:m.id,status:m.id==='cancelled'?'cancelled':'confirmed',start_date:'2026-10-01',end_date:ends[i]}));
+ memberships.push({member_id:'extended',status:'confirmed',start_date:'2026-11-11',end_date:'2026-12-10'}, {member_id:'gap',status:'confirmed',start_date:'2026-12-01',end_date:'2026-12-31'});
+ const report=buildAttendanceReport({members,memberships,attendance:members.map(m=>({member_id:m.id,punched_at:'2026-11-04T04:00:00Z'}))},new Date('2026-11-04T10:00:00Z'));
+ const rows=Object.fromEntries(report.attendance.map(m=>[m.member_id,m]));
+ for(const id of ['today','fifteen','gap'])assert.equal(rows[id].renewal_due_soon,true,id);
+ for(const id of ['sixteen','expired','extended','cancelled'])assert.equal(rows[id].renewal_due_soon,false,id);
+ assert.equal(rows.extended.renewal_date,'2026-12-10');assert.equal(rows.cancelled.renewal_date,null);
+});
 test('seven-day absence requires active membership on each fully imported completed day',()=>{
  const members=['all','visit','new','expired','team','pt','archived','unmapped'].map((id,i)=>({id,admission_id:id==='pt'?'PT-1':'ZF-'+(i+1),device_user_id:id==='team'?2985:id==='unmapped'?null:i+1,full_name:id,is_archived:id==='archived',phone:'9000000000'}));
  const data={gymId:'b80cd818-2abe-4a90-9027-e2ba1916aec4',members,memberships:members.map(m=>({member_id:m.id,status:'confirmed',start_date:m.id==='new'?'2026-10-26':'2026-10-01',end_date:m.id==='expired'?'2026-10-20':'2026-11-30'})),attendanceStatus:{coverage_start:'2026-10-01',records:2,imported_at:'2026-10-28T06:00:00Z'},attendance:[{member_id:'visit',punched_at:'2026-10-22T04:00:00Z'},{member_id:'visit',punched_at:'2026-10-22T05:00:00Z'},{member_id:'all',punched_at:'2026-10-28T14:00:00Z'}]};

@@ -6,21 +6,23 @@
   <meta name="theme-color" content="#f6f7f9">
   <title>Zenith Fitness · Workspace</title>
   <link rel="stylesheet" href="/dashboard/styles.css">
-  <link rel="stylesheet" href="/dashboard/management.css">
-  <link rel="stylesheet" href="/dashboard/overview.css">
+  <link rel="stylesheet" href="/dashboard/management.css?v=20261104-attendance-startup">
+  <link rel="stylesheet" href="/dashboard/overview.css?v=20261104-attendance-startup">
   <link rel="stylesheet" href="/dashboard/gold.css">
   <script src="/dashboard/portal-jobs.js" defer></script>
   <script src="/dashboard/whatsapp-templates.js" defer></script>
   <script src="/dashboard/messages.js" defer></script>
-  <script src="/dashboard/management.js?v=20261028-parameters-bottom" defer></script>
+  <script src="/dashboard/attendance-messages.js?v=20261104" defer></script>
+  <script src="/dashboard/management.js?v=20261104-attendance-startup" defer></script>
   <script src="/dashboard/leads.js" defer></script>
   <script src="/dashboard/review-members.js" defer></script>
   <script src="/dashboard/pt.js" defer></script>
   <script src="/dashboard/secondary-sync.js" defer></script>
-  <script src="/dashboard/app.js?v=20261028-parameters-bottom" defer></script>
+  <script src="/dashboard/app.js?v=20261104-attendance-startup" defer></script>
 </head>
 <body>
-  <section class="login-screen" id="loginScreen">
+  <div id="startupScreen" class="loading" role="status">Opening your Zenith Fitness workspace?</div>
+  <section class="login-screen" id="loginScreen" hidden>
     <div class="login-story">
       <a class="brand" href="/dashboard/"><span class="brand-mark">Z<span>↗</span></span><span>ZENITH<span class="brand-sub">FITNESS WORKSPACE</span></span></a>
       <div class="story-copy"><span class="eyebrow">ZENITH FITNESS</span><h1>Manage your gym.<br>In one place.</h1><p>Members, staff, collections and follow-ups.<br>A clear view of your gym’s day.</p><div class="story-line"><span></span> Your gym. Your people. Your workspace.</div></div>

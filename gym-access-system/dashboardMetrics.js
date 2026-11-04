@@ -68,6 +68,13 @@ function buildDashboard(data, { role, days = 30, now = new Date(), from, to,para
   };
   result.attendance = result.attendance.map(enrich);
   if (role !== 'trainer') {
+    // Monthly sales goals use sale dates, independently of report filters.
+    const targetMonth=today.slice(0,7);
+    const targetPeriods=gymPeriods.filter(m=>m.status==='confirmed'&&['admission','renewal'].includes(m.kind)&&(m.purchased_at?dateKey(m.purchased_at):m.start_date)>=targetMonth+'-01'&&(m.purchased_at?new Date(m.purchased_at)<=now:m.start_date<=today));
+    const targetAdmissions=targetPeriods.filter(m=>m.kind==='admission').length;
+    const targetRenewals=targetPeriods.filter(m=>m.kind==='renewal').length;
+    const targetSales=Math.round(targetPeriods.reduce((sum,m)=>sum+Number(m.final_amount??m.historical_charge??0),0)*100)/100;
+    result.monthlyTarget={month:targetMonth,asOf:today,salesGoal:500000,renewalsGoal:60,admissionsGoal:80,salesAchieved:targetSales,renewalsAchieved:targetRenewals,admissionsAchieved:targetAdmissions,salesRemaining:Math.max(0,500000-targetSales),renewalsRemaining:Math.max(0,60-targetRenewals),admissionsRemaining:Math.max(0,80-targetAdmissions)};
     result.weeklyAttendance=buildAttendanceReport(data,now);
     const legacyPT=memberships.filter(m=>ptMemberIds.has(m.member_id)).map(m=>({...enrich(m),...periodAmounts(m),total_amount:m.final_amount??m.historical_charge,plan_name:(data.plans||[]).find(p=>p.id===m.plan_id)?.name||'Historical PT',trainer_name:'Not recorded',package:'legacy',legacy_membership:true,...(m.status==='cancelled'?{outstanding:0}:{})}));
     result.personalTraining=[...ptBalances.map(enrich),...legacyPT];
@@ -80,11 +87,13 @@ function buildDashboard(data, { role, days = 30, now = new Date(), from, to,para
     const reportIds=new Set(reportMembers.map(m=>m.id));
     const rangeActive=new Set(memberships.filter(m=>m.status==='confirmed'&&m.start_date<=range.to&&m.end_date>=range.to).map(m=>m.member_id));
     const countPeriods=(kind,first,last)=>gymPeriods.filter(m=>m.kind===kind&&m.status==='confirmed'&&(m.purchased_at?dateKey(m.purchased_at):m.start_date)>=first&&(m.purchased_at?dateKey(m.purchased_at):m.start_date)<=last).length;
+    const countEnquiries=(first,last)=>(data.enquiries||[]).filter(e=>e.created_at&&Number.isFinite(new Date(e.created_at).getTime())&&new Date(e.created_at)<=now&&dateKey(e.created_at)>=first&&dateKey(e.created_at)<=last).length;
     const channelTotal=channel=>currentPayments.filter(p=>collectionChannel(p.payment_mode)===channel).reduce((sum,p)=>sum+signed(p),0);
     result.gymOverview={
       asOf:range.to,weekStart,monthStart:range.to.slice(0,7)+'-01',
       dailyAdmissions:countPeriods('admission',range.to,range.to),weeklyAdmissions:countPeriods('admission',weekStart,range.to),monthlyAdmissions:countPeriods('admission',range.to.slice(0,7)+'-01',range.to),
       dailyRenewals:countPeriods('renewal',range.to,range.to),weeklyRenewals:countPeriods('renewal',weekStart,range.to),monthlyRenewals:countPeriods('renewal',range.to.slice(0,7)+'-01',range.to),
+      dailyEnquiries:countEnquiries(range.to,range.to),weeklyEnquiries:countEnquiries(weekStart,range.to),monthlyEnquiries:countEnquiries(range.to.slice(0,7)+'-01',range.to),
       selectedAdmissions:countPeriods('admission',range.from,range.to),selectedRenewals:countPeriods('renewal',range.from,range.to),
       cashCollected:channelTotal('cash'),onlineCollected:channelTotal('online'),otherCollected:channelTotal('other'),totalCollected:revenue,
       totalMembers:reportMembers.length,activeMembers:[...rangeActive].filter(id=>reportIds.has(id)).length,

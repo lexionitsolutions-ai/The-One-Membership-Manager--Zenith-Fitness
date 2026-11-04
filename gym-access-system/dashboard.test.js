@@ -171,6 +171,7 @@ test('all dashboard page templates render across roles, including empty and esca
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname,'public/dashboard/whatsapp-templates.js'),'utf8'),context);
   vm.runInContext(fs.readFileSync(path.join(__dirname,'public/dashboard/messages.js'),'utf8'),context);
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'public/dashboard/attendance-messages.js'),'utf8'),context);
   vm.runInContext(fs.readFileSync(path.join(__dirname,'public/dashboard/management.js'),'utf8'),context);
   vm.runInContext(fs.readFileSync(path.join(__dirname,'public/dashboard/leads.js'),'utf8'),context);
   vm.runInContext(fs.readFileSync(path.join(__dirname,'public/dashboard/review-members.js'),'utf8'),context);
@@ -194,10 +195,22 @@ test('all dashboard page templates render across roles, including empty and esca
   const activityHtml=vm.runInContext('receptionActivitySection(testActivity)',context);
   assert.ok(activityHtml.includes('&lt;script&gt;'));assert.ok(!activityHtml.includes('<img'));
   assert.equal(element('#userName').textContent,'Zenith Admin');
+  context.absentMember={member_name:'Test <Member>',admission_id:'ZF-123',phone:'9876543210',renewal_date:'2026-11-10',renewal_due_soon:true};
+  const contactHtml=vm.runInContext('attendanceWhatsApp(absentMember)',context);
+  const drafts=[...contactHtml.matchAll(/href="([^"]+)"/g)].map(match=>new URL(match[1].replaceAll('&amp;','&')).searchParams.get('text'));
+  assert.equal(drafts.length,2);
+  assert.equal(drafts[0],vm.runInContext('ZenithAttendanceMessages.en',context));
+  assert.equal(drafts[1],vm.runInContext('ZenithAttendanceMessages.mr',context));
+  const memberHtml=vm.runInContext("attendanceTable(['MEMBER'],[absentMember],m=>[attendancePerson(m)],'Empty')",context);
+  assert.ok(memberHtml.includes('class="attendance-renewal-soon"'));
+  assert.ok(memberHtml.includes('Renewal: 10 Nov 2026'));
+  assert.ok(memberHtml.includes('Test &lt;Member&gt;'));
+  assert.ok(!vm.runInContext("attendanceWhatsApp({phone:'invalid'})",context).includes('href='));
+
   for(const role of ['admin','receptionist','trainer']){
     context.testData=demoDashboard(role);
     vm.runInContext('state.role=testData.role; state.data=testData;',context);
-    const pages=role==='admin'?['overview','parameters','sales','admissions','renewals','renewed','review','pt','members','attendance','finance','pending','expenses','enquiries','leads','team','fingerprint','messages','operations']:role==='trainer'?['overview','members','attendance']:['admissions','renewed','renewals','pt','enquiries','leads','attendance','review','members','pending','expenses'];
+    const pages=role==='admin'?['overview','parameters','sales','admissions','renewals','renewed','review','pt','members','attendance','finance','pending','expenses','enquiries','leads','team','fingerprint','messages','operations']:role==='trainer'?['overview','members','attendance']:['overview','admissions','renewed','renewals','pt','enquiries','leads','attendance','review','members','pending','expenses'];
     for(const page of pages){
       vm.runInContext(`navigate('${page}')`,context);
       if(page==='fingerprint')assert.ok(element('#pageBody').innerHTML.includes('src="/fingerprint/?embedded=1"'));
@@ -206,11 +219,11 @@ test('all dashboard page templates render across roles, including empty and esca
     }
     if(role==='receptionist'){
       const nav=element('#mainNav').innerHTML;
-      for(const key of ['admissions','renewed','renewals','pt','enquiries','leads','attendance','review','members','pending','expenses'])assert.ok(nav.includes(`data-go="${key}"`));
-      for(const key of ['finance','sales','team','messages','fingerprint','overview'])assert.ok(!nav.includes(`data-go="${key}"`));
+      for(const key of ['overview','admissions','renewed','renewals','pt','enquiries','leads','attendance','review','members','pending','expenses'])assert.ok(nav.includes(`data-go="${key}"`));
+      for(const key of ['finance','sales','team','messages','fingerprint'])assert.ok(!nav.includes(`data-go="${key}"`));
       vm.runInContext('navigate("pt");',context);assert.equal(vm.runInContext('state.page',context),'pt');
       assert.ok(element('#pageBody').innerHTML.includes('New PT package'));
-      vm.runInContext('navigate("finance");',context);assert.equal(vm.runInContext('state.page',context),'admissions');
+      vm.runInContext('navigate("finance");',context);assert.equal(vm.runInContext('state.page',context),'overview');
       assert.equal(element('#exportButton').hidden,true);assert.equal(element('#exportButton').disabled,true);
       assert.doesNotThrow(()=>vm.runInContext('exportReport();exportManagementReport();',context));
       assert.equal(element('#toast').textContent,'Report export is not available for reception.');

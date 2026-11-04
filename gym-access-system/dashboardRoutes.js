@@ -242,7 +242,7 @@ function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessio
   router.post('/member-reviews',async(req,res,next)=>{
     try{const {staff,session}=await authenticated(req);requireRole(staff,['admin','receptionist']);const {requestId,...payload}=req.body;
       res.json(await request('/rest/v1/rpc/save_member_review',{method:'POST',token:session.accessToken,body:{target_gym:staff.gym_id,request_uuid:uuid(requestId),payload}}));
-    }catch(e){if(e.schemaMissing)e.message='Run migration 011 to enable member review follow-ups.';next(e);}
+    }catch(e){if(e.schemaMissing)e.message='Run migration 011 to enable member review follow-ups.';if(req.body?.status==='Call Not Received (CNR)'&&e.databaseCode==='P0001'&&/Choose a follow-up status/i.test(e.detail||e.message)){e.status=503;e.message='Run migration 017 (review_cnr_shared_date) in Supabase to enable Call Not Received (CNR).';}next(e);}
   });
   router.get('/member-reviews/:id/history',async(req,res,next)=>{
     try{const {staff,session}=await authenticated(req);requireRole(staff,['admin','receptionist']);

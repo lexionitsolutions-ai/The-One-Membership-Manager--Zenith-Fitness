@@ -248,7 +248,7 @@ test('all dashboard page templates render across roles, including empty and esca
   vm.runInContext('filtersForPage().reviewDate="2026-10-29";filtersForPage().reviewDateType="followup";renderPage();',context);
   assert.equal(vm.runInContext('reviewRows().length',context),1,'exact date works across expiry months');assert.ok(element('#pageBody').innerHTML.includes('type="date" id="reviewSelectedDate"'));
   vm.runInContext('filtersForPage().reviewDate="2026-08-31";filtersForPage().reviewDateType="expiry";',context);assert.equal(vm.runInContext('reviewRows().length',context),1);
-  vm.runInContext('filtersForPage().reviewDate="2026-11-05";filtersForPage().reviewDateType="return";',context);assert.equal(vm.runInContext('reviewRows().length',context),1);
+  vm.runInContext('filtersForPage().reviewDate="2026-10-29";filtersForPage().reviewDateType="return";',context);assert.equal(vm.runInContext('reviewRows().length',context),1);
   vm.runInContext('filtersForPage().reviewDate="2026-11-06";',context);assert.equal(vm.runInContext('reviewRows().length',context),0);
   context.testData={staff:{full_name:'Admin'},...buildDashboard({members:[]},{role:'admin',days:7})};
   vm.runInContext('state.role="admin";state.data=testData;navigate("overview");',context);

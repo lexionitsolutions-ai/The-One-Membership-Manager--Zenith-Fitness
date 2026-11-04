@@ -74,3 +74,27 @@ independently of the overview report date range. Only display fields are attache
 to member cards; RPC results and request hashes are excluded. Trainers cannot
 read this history. The existing review and history tables are used; no migration
 is needed. Saving retains the existing request-ID retry and concurrency checks.
+
+## CNR and the shared follow-up / rejoin date (017)
+
+Apply `supabase/migrations/202611040017_review_cnr_shared_date.sql` once in the
+Supabase SQL editor. The database currently restricts review statuses, so this
+migration is required to save **Call Not Received (CNR)**. Then run
+`supabase/tests/review_cnr_shared_date_smoke.sql` to verify the transactional
+workflow with temporary records; that script rolls its test data back.
+
+The edit form removes Contact type and the separate Interested to join again
+input. One **Next follow-up / Rejoin date** is used by the form, cards, history,
+filters and enquiry Follow-ups calls. The same date is stored in both existing
+columns for compatibility. When an older record has conflicting dates, the next
+follow-up date takes precedence; the old database values and history are not
+rewritten by this migration. An older rejoin-only date is still scheduled.
+Interested and Call Later require the shared date. CNR can be saved without a
+retry date; selecting one schedules another call.
+
+Scheduled review calls carry the **Old Gym Member** heading. They use the original
+review actions and history instead of adding duplicate enquiry records. Contact
+type is inferred during saves (WhatsApp Sent -> WhatsApp, Pending -> Other,
+otherwise Call). CNR updates count as unanswered calls, separately from recorded
+contacts, and still appear in the status timeline. Existing retry IDs, stale-save
+protection, renewal validation and role restrictions remain in place.

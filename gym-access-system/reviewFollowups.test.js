@@ -13,7 +13,7 @@ function browser(data){
   matched:row=>JSON.stringify(row).toLowerCase().includes(state.search.toLowerCase()),
   fmt:String,simpleDate:value=>value||'Not recorded',time:()=> '10:00 am',
   badge:value=>`<span class="badge">${escapeHtml(value)}</span>`,
-  empty:title=>title,resultsFooter:()=>'',addButton:()=>'',
+  empty:title=>title,resultsFooter:()=>'',addButton:()=>'',field:(name,label,options)=>`<label>${label}${options.options?`<select name="${name}">${options.options.map(o=>`<option>${typeof o==='string'?o:o.name}</option>`).join('')}</select>`:`<input name="${name}" type="${options.type||'text'}" value="${options.value||''}">`}</label>`,
   ZenithMessages:{render:()=> 'Message',url:phone=>phone?'https://wa.me/'+phone:null}
  });
  for(const file of ['leads.js','review-members.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'public/dashboard',file),'utf8'),context);
@@ -39,6 +39,32 @@ test('Not Interested stays visible in red, rejoin dates are green, and explicit 
  assert.equal(page.run("reviewCardClass({review_status:'Not Interested',return_date:'2026-11-30'})"),'review-not-interested');
  page.run("filtersForPage().reviewBucket='Not Interested'");assert.equal(page.run('reviewRows().length'),1);
 });
+test('review form offers CNR with one shared date and no contact-type or separate rejoin input',()=>{
+ const page=browser({today:'2026-11-04',reviewMembers:[review('single',{return_date:'2026-11-04'})]});
+ const html=page.run('reviewEntryFields(state.data.reviewMembers[0])');
+ assert.ok(html.includes('Call Not Received (CNR)'));
+ assert.equal((html.match(/type="date"/g)||[]).length,1);
+ assert.ok(html.includes('Next follow-up / Rejoin date'));assert.ok(html.includes('value="2026-11-04"'));
+ assert.ok(!html.includes('name="contact_type"'));assert.ok(!html.includes('name="return_date"'));
+ for(const status of ['Interested','Call Later','Call Not Received (CNR)','WhatsApp Sent','Pending']){
+  const payload=JSON.parse(page.run(`JSON.stringify(reviewEntryPayload({status:${JSON.stringify(status)},next_follow_up_date:'2026-11-04'}))`));
+  assert.equal(payload.next_follow_up_date,'2026-11-04');assert.equal(payload.return_date,payload.next_follow_up_date);
+  assert.equal(payload.contact_type,status==='WhatsApp Sent'?'WhatsApp':status==='Pending'?'Other':'Call');
+ }
+ assert.equal(page.run("reviewEntryPayload({status:'Call Not Received (CNR)',next_follow_up_date:''}).return_date"),'');
+ const card=page.run('reviewMemberCard(state.data.reviewMembers[0],state.data)');
+ assert.equal((card.match(/Next follow-up \/ Rejoin date/g)||[]).length,1);
+ assert.ok(!card.includes('<dt>Interested to rejoin</dt>'));
+});
+test('legacy rejoin dates schedule Old Gym Member calls and CNR is an unanswered attempt',()=>{
+ const row=review('legacy',{return_date:'2026-11-04',history:[{status:'Call Not Received (CNR)',contact_type:'Call',created_at:'2026-11-04T04:30:00Z'}]});
+ const page=browser({today:'2026-11-04',generatedAt:'2026-11-04T05:30:00Z',reviewMembers:[row],enquiries:[]});page.state.page='leads';
+ const html=page.run('renderLeadManager(state.data)');
+ assert.ok(html.includes('<h3 class="review-source-label">Old Gym Member</h3>'));
+ assert.ok(html.includes('0 recorded contacts'));assert.ok(html.includes('1 unanswered call'));
+ assert.equal(page.run('leadManagerRows(state.data).length'),1);
+ page.run("filtersForPage().leadDate='2026-11-05'");assert.equal(page.run('leadManagerRows(state.data).length'),0);
+});
 test('member follow-ups join enquiry calls on the correct date across expiry months without copying enquiries',()=>{
  const data={today:'2026-11-04',enquiries:[{id:'enquiry',full_name:'New enquiry',lead_status:'Pending',next_follow_up_date:'2026-11-04'}],reviewMembers:[
   review('today',{expiry_month:'2026-08',next_follow_up_date:'2026-11-04'}),
@@ -49,7 +75,7 @@ test('member follow-ups join enquiry calls on the correct date across expiry mon
  const page=browser(data);page.state.page='leads';
  assert.equal(page.run('leadManagerRows(state.data).length'),3);
  assert.equal(data.enquiries.length,1);
- const html=page.run('renderLeadManager(state.data)');assert.ok(html.includes('data-review-edit="today"'));assert.ok(html.includes('review-not-interested'));assert.ok(!html.includes('data-edit-enquiry="review:'));
+ const html=page.run('renderLeadManager(state.data)');assert.ok(html.includes('data-review-edit="today"'));assert.ok(html.includes('Old Gym Member'));assert.ok(html.includes('review-not-interested'));assert.ok(!html.includes('data-edit-enquiry="review:'));
  page.run("filtersForPage().leadBucket='Tomorrow'");assert.equal(page.run('leadManagerRows(state.data)[0].reviewMembershipId'),'tomorrow');
  page.run("filtersForPage().leadBucket='Overdue'");assert.equal(page.run('leadManagerRows(state.data)[0].reviewMembershipId'),'overdue');
  page.run("filtersForPage().leadDate='2026-11-05'");assert.equal(page.run('leadManagerRows(state.data).length'),1);

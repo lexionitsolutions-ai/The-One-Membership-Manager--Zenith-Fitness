@@ -98,3 +98,15 @@ type is inferred during saves (WhatsApp Sent -> WhatsApp, Pending -> Other,
 otherwise Call). CNR updates count as unanswered calls, separately from recorded
 contacts, and still appear in the status timeline. Existing retry IDs, stale-save
 protection, renewal validation and role restrictions remain in place.
+
+## Missing member_reviews table while applying 017
+
+Error `42P01: relation public.member_reviews does not exist` means migration 011
+has not created the review tables in the selected project (or SQL Editor is in a
+different project). Check the project against the app's `SUPABASE_URL` first.
+Run the entire `supabase/setup/repair_member_reviews.sql` as postgres in SQL Editor.
+It checks the base tables, staff-role helper and configured Zenith gym, creates
+missing review tables and their role-based read policies, then installs the
+canonical 017 CNR/shared-date RPC in one transaction. It can be rerun without
+removing existing records. It also requests a PostgREST schema-cache reload.
+There is no need to rerun 017 separately after this repair.

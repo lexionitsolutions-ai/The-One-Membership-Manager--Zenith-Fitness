@@ -22,8 +22,10 @@ function buildAttendanceReport(data,now=new Date()){
  const info=m=>({member_id:m.id,member_name:m.full_name,admission_id:m.admission_id,phone:m.phone||'',...renewalByMember.get(m.id),last_seen:lastSeen.get(m.id)||null});
  const groups=days.map(day=>{const eligible=members.filter(m=>active(m,day)),present=eligible.filter(m=>visits.has(day+':'+m.id));return {day,covered:covered(day),active_count:eligible.length,present_count:present.length,absentees:covered(day)?eligible.filter(m=>!visits.has(day+':'+m.id)).map(info):[]};});
  const allCovered=days.every(covered);
+ const recent=logs.filter(a=>dayKey(a.punched_at)>=days[0]&&dayKey(a.punched_at)<=today).sort((a,b)=>b.punched_at.localeCompare(a.punched_at)).map(a=>({...a,member_name:byMember.get(a.member_id)?.full_name||'Unmapped device user',admission_id:byMember.get(a.member_id)?.admission_id||a.device_user_id,phone:byMember.get(a.member_id)?.phone||'',...renewalByMember.get(a.member_id)}));
  return {from:days[0],to:days[6],today,imported_at:status?.imported_at||null,coverage_start:status?.coverage_start||null,warning:status?.warning||null,device_time:status?.device_time||null,latest_device_punch:status?.latest_device_punch||null,allCovered,days:groups,
   consecutive:allCovered?members.filter(m=>days.every(day=>active(m,day)&&!visits.has(day+':'+m.id))).map(info):[],
-  attendance:logs.filter(a=>dayKey(a.punched_at)>=days[0]&&dayKey(a.punched_at)<=today).sort((a,b)=>b.punched_at.localeCompare(a.punched_at)).map(a=>({...a,member_name:byMember.get(a.member_id)?.full_name||'Unmapped device user',admission_id:byMember.get(a.member_id)?.admission_id||a.device_user_id,phone:byMember.get(a.member_id)?.phone||'',...renewalByMember.get(a.member_id)}))};
+  afternoon:recent.filter(a=>a.device_identifier==='afternoon-portal'),
+  attendance:recent.filter(a=>a.device_identifier!=='afternoon-portal')};
 }
 module.exports={buildAttendanceReport,shiftDay};

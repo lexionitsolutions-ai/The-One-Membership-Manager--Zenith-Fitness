@@ -206,6 +206,15 @@ test('all dashboard page templates render across roles, including empty and esca
   assert.ok(memberHtml.includes('Renewal: 10 Nov 2026'));
   assert.ok(memberHtml.includes('Test &lt;Member&gt;'));
   assert.ok(!vm.runInContext("attendanceWhatsApp({phone:'invalid'})",context).includes('href='));
+  context.afternoonData={weeklyAttendance:{today:'2026-11-04',to:'2026-11-03',from:'2026-10-28',allCovered:true,days:[{day:'2026-11-03',covered:true,active_count:2,present_count:1,absentees:[]}],attendance:[],afternoon:[{member_id:'afternoon',member_name:'Afternoon Member',admission_id:'HH-409',punched_at:'2026-11-03T06:30:00Z',created_at:'2026-11-03T10:00:00Z'}],consecutive:[]}};
+  vm.runInContext("state.attendanceMode='afternoon';state.attendanceDay='all';state.search='';",context);
+  const afternoonHtml=vm.runInContext('renderWeeklyAttendance(afternoonData)',context);
+  assert.ok(afternoonHtml.includes('Afternoon attendance'));assert.ok(afternoonHtml.includes('Afternoon Member'));assert.ok(afternoonHtml.includes('SAVED AT'));
+  vm.runInContext("state.attendanceDay='2026-11-04'",context);
+  assert.equal(vm.runInContext('attendanceViewRows(afternoonData).length',context),0);
+  vm.runInContext("state.attendanceMode='attendance';state.attendanceDay='all'",context);
+  assert.equal(vm.runInContext('attendanceViewRows(afternoonData).length',context),0);
+
 
   for(const role of ['admin','receptionist','trainer']){
     context.testData=demoDashboard(role);

@@ -195,7 +195,7 @@ function createDashboardRouter({ fetchImpl = fetch, secondaryOptions = {},sessio
       const data = {gymId:staff.gym_id};
       const tasks = [
         load('members', 'id,admission_id,device_user_id,full_name,phone,gender,category,is_archived,created_at,needs_review').then(x => { data.members = x; }),
-        load('attendance', 'id,member_id,device_user_id,punched_at,access_result', `&punched_at=gte.${new Date(Date.now() - 91 * 86400000).toISOString()}`).then(x => { data.attendance = x; }),
+        load('attendance', 'id,member_id,device_user_id,device_identifier,punched_at,access_result,created_at', `&punched_at=gte.${new Date(Date.now() - 91 * 86400000).toISOString()}`).then(x => { data.attendance = x; }),
       ];
       if (staff.role !== 'trainer') tasks.push(
         load('memberships', 'id,member_id,plan_id,kind,start_date,end_date,status,final_amount,historical_charge,opening_paid_amount,accounting_verified,purchased_at').then(x => { data.memberships = x; }),

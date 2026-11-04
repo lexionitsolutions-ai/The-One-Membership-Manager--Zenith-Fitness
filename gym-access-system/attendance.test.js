@@ -1,5 +1,24 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');
 const {buildAttendanceReport}=require('./attendanceReports');const {prepareAttendance,createAttendanceImporter,deviceTime}=require('./attendanceImport');const {acquireDevice}=require('./deviceLock');
+test('afternoon check-ins exclude daily and consecutive absentees without inflating fingerprint punches',()=>{
+ const members=['afternoon','fingerprint','both','absent'].map((id,i)=>({id,full_name:id,admission_id:'ZF-'+i,device_user_id:i+1}));
+ const data={members,memberships:members.map(m=>({member_id:m.id,status:'confirmed',start_date:'2026-10-01',end_date:'2026-11-30'})),attendanceStatus:{coverage_start:'2026-10-01',records:4,imported_at:'2026-11-04T05:00:00Z'},attendance:[
+  {member_id:'afternoon',punched_at:'2026-11-03T06:30:00Z',device_identifier:'afternoon-portal'},
+  {member_id:'both',punched_at:'2026-11-03T06:30:00Z',device_identifier:'afternoon-portal'},
+  {member_id:'fingerprint',punched_at:'2026-11-03T02:00:00Z',device_identifier:'device'},
+  {member_id:'both',punched_at:'2026-11-03T02:00:00Z',device_identifier:'device'}]};
+ const now=new Date('2026-11-04T10:00:00Z'),report=buildAttendanceReport(data,now);
+ assert.deepEqual(report.days.at(-1).absentees.map(m=>m.member_id),['absent']);
+ assert.equal(report.days.at(-1).present_count,3);
+ assert.deepEqual(report.consecutive.map(m=>m.member_id),['absent']);
+ assert.equal(report.attendance.length,2);assert.equal(report.afternoon.length,2);
+ assert.equal(report.afternoon[0].member_name,'afternoon');
+ assert.ok(report.days.at(-2).absentees.some(m=>m.member_id==='afternoon'));
+ // An afternoon save never claims that fingerprint device history is complete.
+ data.attendanceStatus=null;
+ const incomplete=buildAttendanceReport(data,now);
+ assert.equal(incomplete.allCovered,false);assert.equal(incomplete.consecutive.length,0);assert.equal(incomplete.afternoon.length,2);
+});
 test('attendance renewal warnings use today, include the fifteenth day and respect prepaid extensions',()=>{
  const members=['today','fifteen','sixteen','expired','extended','cancelled','gap'].map((id,i)=>({id,full_name:id,admission_id:'ZF-'+i,device_user_id:i+1}));
  const ends=['2026-11-04','2026-11-19','2026-11-20','2026-11-03','2026-11-10','2026-11-10','2026-11-10'];
